@@ -39,7 +39,7 @@ sudo make install
   
     e.j stack right x > screen width.
         
-    complete width W > screen width.
+    full width W > screen width.
   
   b) listing mode:
   
