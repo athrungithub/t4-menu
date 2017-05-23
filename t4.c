@@ -64,17 +64,16 @@ read_input(GtkWidget *flow)
 {
   GtkWidget *label;
   gint count = 0;
-  while(TRUE)
-    {
-      gchar buf[BUFSIZ];
-      if (fgets(buf, BUFSIZ, stdin) == NULL)
-        break;
-      if (buf[strlen (buf) - 1] == '\n')
-        buf[strlen(buf) - 1] = '\0';
-      label = make_label(buf);
-      gtk_container_add(GTK_CONTAINER(flow), label);
-      count++;
-    }
+  gchar buf[BUFSIZ];
+
+  for (; fgets(buf, BUFSIZ, stdin); count++)
+  {
+    if (buf[strlen (buf) - 1] == '\n')
+      buf[strlen(buf) - 1] = '\0';
+    label = make_label(buf);
+    gtk_container_add(GTK_CONTAINER(flow), label);
+    count++;
+  }
   return count;
 }
 
@@ -307,7 +306,7 @@ geometry_horizontal (GtkWidget *w, GdkRectangle *rect)
   tmp = gtk_grid_get_child_at (GTK_GRID(gtk_bin_get_child (GTK_BIN(w))),
                                2, 0);
   gtk_widget_get_preferred_height (tmp, &min, &nat);
-  h = nat;
+  h = !nat ? 12 : nat;
 
   t.width = !options->W ? rect->width : options->W < rect->width ?
                                     options->W : rect->width;
@@ -594,6 +593,7 @@ int
 main (int argc, char **argv)
 {
   GtkWidget *filter, *label, *grid, *flowbox, *scrolled, *window;
+  guint count;
 
   options = g_new0 (Options, 1);
   options->l = FALSE;
@@ -636,7 +636,13 @@ main (int argc, char **argv)
   gtk_container_add (GTK_CONTAINER(scrolled), flowbox);
 
   provider_add(window);
-  read_input (flowbox);
+  count = read_input (flowbox);
+  if (!count)
+  {
+    GtkWidget *lab;
+    lab = make_label ("");
+    gtk_container_add (GTK_CONTAINER(flowbox), lab);
+  }
 
   gtk_grid_attach (GTK_GRID(grid), label, 0, 0, 1, 1);
   gtk_grid_attach_next_to (GTK_GRID(grid), filter, label,GTK_POS_RIGHT, 1, 1);
