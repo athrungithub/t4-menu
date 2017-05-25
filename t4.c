@@ -19,6 +19,7 @@ struct _Options
   gboolean l;
   gboolean b;
   char *p;
+  gboolean f;
   gboolean v;
 };
 
@@ -148,7 +149,16 @@ parse_opt (int *argc, char ***argv)
       G_OPTION_ARG_STRING,
       &(options->w),
       "embed into windowid.",
-      NULL
+      NULL,
+    },
+    {
+      "focus",
+      'f',
+      0,
+      G_OPTION_ARG_NONE,
+      &(options->f),
+      "Persistent on lost focus",
+      NULL,
     },
     { "version",
       'v',
@@ -680,7 +690,12 @@ main (int argc, char **argv)
   gtk_widget_show (grid);
   gtk_container_add (GTK_CONTAINER(window), grid);
 
-  /*provider_add(window);*/
+  /* quit on focus lost */
+  if (!options->f)
+  {
+    gtk_widget_set_events(window, GDK_FOCUS_CHANGE_MASK);
+    g_signal_connect(G_OBJECT(window), "focus-out-event", G_CALLBACK(gtk_main_quit),NULL);
+  }
 
   gtk_widget_show (label);
   gtk_widget_show (filter);
