@@ -7,7 +7,7 @@
 
 #define WIDTH_SCREEN6(x) (x / 6)        /* default width height in line mode */
 #define HEIGHT_SCREEN23(x) (2 * x / 3)
-#define PROMPT "Launch: "
+#define PROMPT "Launch:"
 
 struct _Options
 {
@@ -402,8 +402,8 @@ geo_mk (GtkWidget *w)
   hints.max_width = rect.width;
   gtk_window_set_geometry_hints (GTK_WINDOW(w), NULL, &hints, GDK_HINT_POS | GDK_HINT_MAX_SIZE |
                                  GDK_HINT_MIN_SIZE);
-  gtk_window_resize (GTK_WINDOW(w), rect.width, rect.height);
   gtk_window_move (GTK_WINDOW(w), rect.x, rect.y);
+  gtk_window_resize (GTK_WINDOW(w), rect.width, rect.height);
   return;
 }
 
@@ -608,7 +608,6 @@ main (int argc, char **argv)
   options = g_new0 (Options, 1);
   options->l = FALSE;
   options->v = FALSE;
-  char *s;
 
   gtk_init (&argc, &argv);
 
@@ -625,15 +624,12 @@ main (int argc, char **argv)
   grid = gtk_grid_new ();
   gtk_widget_show (grid);
 
-  if (options->p)
-    s = g_strconcat (options->p, " :", NULL);
-  else
-    s = PROMPT;
-  label = gtk_label_new (s);
-  /*gtk_widget_set_name (label, "Prompt");*/
+  label = gtk_label_new (options->p ?  options->p : PROMPT);
+  gtk_widget_set_name (label, "Prompt");
   gtk_widget_show (label);
 
   filter = gtk_label_new (NULL);
+  gtk_widget_set_name (filter, "filter");
   gtk_label_set_width_chars (GTK_LABEL(filter), 10);
   gtk_label_set_max_width_chars (GTK_LABEL(filter), 80);
   gtk_label_set_xalign (GTK_LABEL(filter), 0);
@@ -656,6 +652,7 @@ main (int argc, char **argv)
 
   gtk_grid_attach (GTK_GRID(grid), label, 0, 0, 1, 1);
   gtk_grid_attach_next_to (GTK_GRID(grid), filter, label,GTK_POS_RIGHT, 1, 1);
+  gtk_grid_set_column_spacing (GTK_GRID(grid), 5);
 
   if (options->l)
   {
