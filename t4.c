@@ -707,5 +707,7 @@ main (int argc, char **argv)
 
   gtk_main ();
 
+  g_free (options);
+
   return 0;
 }
