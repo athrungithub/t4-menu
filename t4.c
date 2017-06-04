@@ -506,13 +506,22 @@ flowbox_key_press_event_cb (GtkFlowBox *fb, GdkEvent *ev, GtkWidget *entry)
     gtk_main_quit ();
     return TRUE;
   }
-  else if (KEY(Return) || (KEY(m) && CONTROL(m)))
+  else if ((KEY(Return) && state != GDK_SHIFT_MASK) || (KEY(m) && CONTROL(m)))
   {
     GList *l;
 
     l = gtk_flow_box_get_selected_children (fb);
     output (GTK_WIDGET(fb), l->data, entry);
     return TRUE;
+  }
+  else if (SHIFT(Return))
+  {
+    GList *l;
+    GtkLabel *lab;
+
+    l = gtk_flow_box_get_selected_children (fb);
+    lab = GTK_LABEL(gtk_bin_get_child(GTK_BIN(l->data)));
+    gtk_label_set_text (GTK_LABEL(entry), gtk_label_get_text(lab));
   }
   else if (CONTROL(n) || CONTROL(j))
   {
@@ -572,7 +581,7 @@ flowbox_key_press_event_cb (GtkFlowBox *fb, GdkEvent *ev, GtkWidget *entry)
 
   }
   else if (state != GDK_CONTROL_MASK && state != GDK_MOD1_MASK &&
-          (GDK_KEY_exclam < key && key <  GDK_KEY_exclamdown))
+          (GDK_KEY_space <= key && key <=  GDK_KEY_exclamdown))
   {
       const char *get;
       char *str;
