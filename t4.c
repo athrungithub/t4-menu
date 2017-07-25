@@ -557,19 +557,20 @@ flowbox_key_press_event_cb (GtkFlowBox *fb, GdkEvent *ev, GtkWidget *entry)
     gchar str[256];
 
     get = gtk_label_get_text (GTK_LABEL(entry));
-    if (get)
+    gint i = strlen (get);
+    if (i > 0)
     {
-      gint i = strlen (get);
       g_strlcpy (str, get, i);
-      str[--i] = 0;
+      str[--i] = '\0';
       gtk_label_set_text (GTK_LABEL(entry), str);
       childindex = -1;
       gtk_flow_box_set_filter_func (fb, filter_func, entry, NULL);
     }
     else
     {
-      gtk_flow_box_invalidate_filter (fb);
-      gtk_flow_box_select_child (fb, gtk_flow_box_get_child_at_index (fb, 0));
+      return TRUE;
+      /* gtk_flow_box_invalidate_filter (fb); */
+      /* gtk_flow_box_select_child (fb, gtk_flow_box_get_child_at_index (fb, 0)); */
     }
     if (options->l)
     {
