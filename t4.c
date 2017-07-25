@@ -73,7 +73,7 @@ read_input(GtkWidget *flow)
       buf[strlen(buf) - 1] = '\0';
     label = make_label(buf);
     gtk_container_add(GTK_CONTAINER(flow), label);
-    count++;
+    /*count++;*/
   }
   return count;
 }
@@ -554,16 +554,15 @@ flowbox_key_press_event_cb (GtkFlowBox *fb, GdkEvent *ev, GtkWidget *entry)
   else if (KEY(BackSpace) || CONTROL(h))
   {
     const char *get;
-    gchar *str;
+    gchar str[256];
 
     get = gtk_label_get_text (GTK_LABEL(entry));
     if (get)
     {
-      str = g_strdup (get);
-      gint i = strlen (str);
+      gint i = strlen (get);
+      g_strlcpy (str, get, i);
       str[--i] = 0;
       gtk_label_set_text (GTK_LABEL(entry), str);
-      g_free (str);
       childindex = -1;
       gtk_flow_box_set_filter_func (fb, filter_func, entry, NULL);
     }
@@ -584,13 +583,12 @@ flowbox_key_press_event_cb (GtkFlowBox *fb, GdkEvent *ev, GtkWidget *entry)
           (GDK_KEY_space <= key && key <=  GDK_KEY_exclamdown))
   {
       const char *get;
-      char *str;
+      char str[512];
 
       get = gtk_label_get_text (GTK_LABEL(entry));
-      str = g_strdup (get);
-      g_snprintf (str, 1024, "%s%c", get, key);
+      g_strlcpy (str, get, strlen(get));
+      g_snprintf (str, 512, "%s%c", get, key);
       gtk_label_set_text (GTK_LABEL(entry), str);
-      g_free (str);
       childindex = -1;
       gtk_flow_box_set_filter_func (fb, filter_func, entry, NULL);
       if (options->l)
@@ -640,7 +638,8 @@ main (int argc, char **argv)
   filter = gtk_label_new (NULL);
   gtk_widget_set_name (filter, "filter");
   gtk_label_set_width_chars (GTK_LABEL(filter), 10);
-  gtk_label_set_max_width_chars (GTK_LABEL(filter), 80);
+  /*gtk_label_set_max_width_chars (GTK_LABEL(filter), 80);*/
+  gtk_label_set_ellipsize (GTK_LABEL(filter), PANGO_ELLIPSIZE_MIDDLE);
   gtk_label_set_xalign (GTK_LABEL(filter), 0);
   gtk_widget_show (filter);
 
