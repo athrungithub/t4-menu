@@ -15,11 +15,16 @@ struct _Options
   guint y;
   guint W;
   guint H;
-  char *w;
+  char *w; // connect to window id (X11)
   gboolean l;
   gboolean b;
-  char *p;
-  gboolean f;
+  char *p; // prompt string
+  char *f; // font
+  char *b_color; // normal color
+  char *color; // color
+  char *prompt_color;
+  char *prompt_back_color;
+  gboolean n;
   gboolean v;
 };
 
@@ -86,97 +91,60 @@ parse_opt (int *argc, char ***argv)
 
   GOptionEntry entries[] =
   {
-    { "xposition",
-      'x',
-      0,
-      G_OPTION_ARG_INT,
-      &(options->x),
-      "x position. If x > width screen, stack to rigth screen",
-      NULL
+    { "xposition", 'x', 0, G_OPTION_ARG_INT, &(options->x),
+      "x position. If x > width screen, stack to rigth screen", NULL },
+    { "yposition", 'y', 0, G_OPTION_ARG_INT, &(options->y),
+      "y position. If y > height stack to bottom screen", NULL
     },
-    { "yposition",
-      'y',
-      0,
-      G_OPTION_ARG_INT,
-      &(options->y),
-      "y position. If y > height stack to bottom screen",
-      NULL
+    { "width", 'W', 0, G_OPTION_ARG_INT, &(options->W),
+      "width. Vertical mode, default 1/6 screen. W > width screen -> screen width", NULL
     },
-    { "width",
-      'W',
-      0,
-      G_OPTION_ARG_INT,
-      &(options->W),
-      "width. Vertical mode, default 1/6 screen. W > width screen -> screen width",
-      NULL
+    { "height", 'H', 0, G_OPTION_ARG_INT, &(options->H),
+      "height. Vertical mode, default 2/3 screen. H > height screen -> screen height", NULL
     },
-    { "height",
-      'H',
-      0,
-      G_OPTION_ARG_INT,
-      &(options->H),
-      "height. Vertical mode, default 2/3 screen. H > height screen -> screen height",
-      NULL
+    { "line", 'l', 0, G_OPTION_ARG_NONE, &(options->l),
+      "vertical mode: list items vertically", NULL
     },
-    { "line",
-      'l',
-      0,
-      G_OPTION_ARG_NONE,
-      &(options->l),
-      "vertical mode: list items vertically",
-      NULL
+    { "bottom", 'b', 0, G_OPTION_ARG_NONE, &(options->b),
+      "bottom screen", NULL
     },
-    { "bottom",
-      'b',
-      0,
-      G_OPTION_ARG_NONE,
-      &(options->b),
-      "bottom screen",
-      NULL
+    { "font", 'f', 0, G_OPTION_ARG_STRING, &(options->f),
+      "font. ex: \"10px [styles] Sans\"", NULL,
     },
-    {
-      "prompt",
-      'p',
-      0,
-      G_OPTION_ARG_STRING,
-      &(options->p),
-      "prompt. Define the prompt displayed to left of input field",
-      NULL,
+    { "normal-color", 0, 0, G_OPTION_ARG_STRING, &(options->color),
+      "normal foreground color of options", NULL,
     },
-    { "windowid",
-      'w',
-      0,
-      G_OPTION_ARG_STRING,
-      &(options->w),
-      "embed into windowid.",
-      NULL,
+    { "normal-background", 0, 0, G_OPTION_ARG_STRING, &(options->b_color),
+      "normal background color of options", NULL,
     },
-    {
-      "focus",
-      'f',
-      0,
-      G_OPTION_ARG_NONE,
-      &(options->f),
-      "Persistent on lost focus",
-      NULL,
+    { "prompt", 'p', 0, G_OPTION_ARG_STRING, &(options->p),
+      "prompt. Define the string to show", NULL,
     },
-    { "version",
-      'v',
-      0,
-      G_OPTION_ARG_NONE,
-      &(options->v),
-      "version",
-      NULL
+    { "prompt-color", 0, 0, G_OPTION_ARG_STRING, &(options->prompt_color),
+      "prompt color", NULL,
+    },
+    { "prompt-back-color", 0, 0, G_OPTION_ARG_STRING, &(options->prompt_back_color),
+      "prompt background color", NULL,
+    },
+    { "windowid", 'w', 0, G_OPTION_ARG_STRING, &(options->w),
+      "X11: embed into windowid.", NULL,
+    },
+    { "focus", 'n', 0, G_OPTION_ARG_NONE, &(options->n),
+      "Persistent on lost focus", NULL,
+    },
+    { "version", 'v', 0, G_OPTION_ARG_NONE, &(options->v),
+      "version", NULL
     },
   };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
   g_option_context_set_ignore_unknown_options (context, TRUE);
-  g_option_context_set_description (context, "Geometry: \n\tx > width screen: stack to right\n\
+  g_option_context_set_description (context, "Geometry: \n"
+"\tx > width screen: stack to right\n\
 \tW > width screen: width screen\n\
 \tH > height screen: height screen\n\
-\nFont & Color:\nCopy PREFIX/share/t4/t4.css to CONFIGDIR/t4.css and edit.\n");
+\nStyle file:\nFor full style Copy PREFIX/share/t4/t4.css to CONFIGDIR/t4.css and edit.\n");
 
   if (!g_option_context_parse (context, argc, argv, &error))
   {
@@ -186,8 +154,7 @@ parse_opt (int *argc, char ***argv)
   if (options->v)
   {
     fprintf (stdout, "%s - version: %s\nbuild date: %s\n", NAME, VERSION,  BUILDDATE);
-    fprintf (stdout, "%s\n","Copyright © 2017 Alberto Higashikadoguchi <athrun@arnet.com.ar>");
-    /*fprintf (stdout, "%s\n", "Licence GPLv3+");*/
+    fprintf (stdout, "%s\n","Copyright © 2018 Athrun <athrun@arnet.com.ar>");
     exit (EXIT_SUCCESS);
   }
 
@@ -278,8 +245,8 @@ geometry_vertical (GtkWidget *w, GdkRectangle *rect)
   /* calcular de altura del widget */
   h = get_height (w);
 
-  t.width = !options->W ? WIDTH_SCREEN6(rect->width) : (options->W < rect->width) ?
-            options->W : WIDTH_SCREEN6(rect->width);
+  t.width = !options->W ?  WIDTH_SCREEN6(rect->width) : (options->W < rect->width) ?
+            options->W : (rect->width);
   t.x = !options->x ? 0 : options->x <= (rect->width - t.width) ? options->x : (rect->width - t.width);
   rect->width = t.width;
   rect->x = t.x;
@@ -318,8 +285,10 @@ geometry_horizontal (GtkWidget *w, GdkRectangle *rect)
   gtk_widget_get_preferred_height (tmp, &min, &nat);
   h = !nat ? 12 : nat;
 
-  t.width = !options->W ? rect->width : options->W < rect->width ?
+  t.width = !options->W ? (options->x < (rect->width - 100) ?
+                           rect->width - options->x : rect->width):options->W < rect->width ?
                                     options->W : rect->width;
+
   t.x = !options->x ? 0 : options->x < (rect->width - t.width) ?
                       options->x : (rect->width - t.width);
 
@@ -380,7 +349,7 @@ geo_mk (GtkWidget *w)
     else
       scr = gtk_grid_get_child_at (GTK_GRID(gtk_bin_get_child (GTK_BIN(w))), 0, 1);
 
-    /* desabilitar el scroll si hay pocas opciones */
+    /* deshabilitar el scroll si hay pocas opciones */
     if (rect.height <= 78)
       gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scr), GTK_POLICY_NEVER, GTK_POLICY_NEVER);
     else
@@ -412,32 +381,51 @@ provider_add (GtkWidget *w)
 {
   GtkCssProvider *provider;
   GdkScreen *screen;
-  /*GdkDisplay *display;*/
-  GError *e = NULL;
-  gboolean l;
-  provider = gtk_css_provider_new();
-  char *file;
-  char *h_config = g_build_filename(g_get_user_config_dir (), "t4", "t4.css", NULL);
+  provider = gtk_css_provider_get_default();
 
-  /*
-   * Check to see if we are being run from the correct directory.
-   */
-  file = g_strdup_printf ("%s/%s/%s", DATAPREFIX,"t4", "t4.css");
-  l = gtk_css_provider_load_from_path (provider, file, &e);
-  e = NULL;
-  if (file_exists(h_config))
-    l = gtk_css_provider_load_from_path (provider, h_config, &e);
-
-  if (!l)
+  if (options->f || options->b_color || options->color || options->prompt_color || options->prompt_back_color)
     {
-      fprintf (stderr, ("Failed to init gtk_css_provider_load_from_path: %s\n"), e->message);
-      g_error_free (e);
-      e = NULL;
-   }
+      GString *style = g_string_new(NULL);
+      if (options->f)
+        {
+          g_string_append_printf (style, "#Prompt{font: %s;}", options->f);
+          g_string_append_printf (style, "flowbox{font: %s;}", options->f);
+          g_string_append_printf (style, "#filter{font: %s;}", options->f);
+        }
+      if (options->color)
+        {
+          g_string_append_printf (style, "flowbox{color: %s;}", options->color);
+        }
+      if (options->b_color)
+        {
+          g_string_append_printf (style, "flowbox{background-color: %s;}", options->b_color);
+        }
+      if (options->prompt_color)
+        {
+          g_string_append_printf (style, "#Prompt{color: %s;}", options->prompt_color);
+        }
+      if (options->prompt_back_color)
+        {
+          g_string_append_printf (style, "#Prompt{background-color: %s;}", options->prompt_back_color);
+        }
+      gtk_css_provider_load_from_data (provider,
+                                       style->str,
+                                       -1,
+                                       NULL);
+      g_string_free (style, TRUE);
+    }
+  else
+    {
+      char *h_config = g_build_filename(g_get_user_config_dir (), "t4", "t4.css", NULL);
+      if (file_exists(h_config))
+        gtk_css_provider_load_from_path (provider, h_config, NULL);
 
+      g_free (h_config);
+    }
   screen = gtk_window_get_screen (GTK_WINDOW(w));
   gtk_style_context_add_provider_for_screen (screen, GTK_STYLE_PROVIDER (provider),
-                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                                            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
   g_object_unref (provider);
 }
 
@@ -629,11 +617,16 @@ main (int argc, char **argv)
   gtk_window_set_title (GTK_WINDOW(window), "t4");
   g_signal_connect (window, "destroy", G_CALLBACK(gtk_main_quit), &window);
 
+  provider_add(window);
   grid = gtk_grid_new ();
   gtk_widget_show (grid);
 
-  label = gtk_label_new (options->p ?  options->p : PROMPT);
-  gtk_widget_set_name (label, "Prompt");
+  /* label = gtk_label_new (options->p ?  options->p : PROMPT); */
+  /* gtk_widget_set_name (label, "Prompt"); */
+  label = g_object_new (GTK_TYPE_LABEL,
+                        "name", "Prompt",
+                        "label", (options->p ? options->p : PROMPT),
+                        NULL);
   gtk_widget_show (label);
 
   filter = gtk_label_new (NULL);
@@ -650,7 +643,6 @@ main (int argc, char **argv)
 
   gtk_container_add (GTK_CONTAINER(scrolled), flowbox);
 
-  provider_add(window);
   count = read_input (flowbox);
   if (!count)
   {
@@ -697,7 +689,7 @@ main (int argc, char **argv)
   gtk_container_add (GTK_CONTAINER(window), grid);
 
   /* quit on focus lost */
-  if (!options->f)
+  if (!options->n)
   {
     gtk_widget_set_events(window, GDK_FOCUS_CHANGE_MASK);
     g_signal_connect(G_OBJECT(window), "focus-out-event", G_CALLBACK(gtk_main_quit),NULL);
