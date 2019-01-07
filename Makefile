@@ -34,15 +34,9 @@ install: all
 	@mkdir -p $(DESTDIR)$(PREFIX)/bin
 	@cp -f $(NAME) $(DESTDIR)$(PREFIX)/bin
 	@chmod 755 $(DESTDIR)$(PREFIX)/bin/$(NAME)
-	@echo installing  $(DESTDIR)$(SHAREDIR)/$(NAME).css.example
-	@mkdir -p $(DESTDIR)$(DATAPREFIX)/$(NAME)
-	@cp -f $(NAME).css.example $(DESTDIR)$(DATAPREFIX)/$(NAME)/
-	@chmod 644 $(DESTDIR)$(DATAPREFIX)/$(NAME)/$(NAME).css.example
 
 uninstall:
 	@echo removing executable file from $(DESTDIR)$(PREFIX)/bin
 	@rm -f $(DESTDIR)$(PREFIX)/bin/$(NAME)
-	@echo removing file style from $(DESTDIR)$(DATAPREFIX)/$(NAME)
-	@rm -f $(DESTDIR)$(DATAPREFIX)/$(NAME)/$(NAME).css.example
 
 .PHONY: all options clean dist install uninstall
