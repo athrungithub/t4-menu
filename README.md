@@ -1,8 +1,6 @@
 # t4-menu
 menu system. little dmenu clone.
 
-I love dmenu.i like wm wayland backend ...
-
 
 ## Install:
 depend: gtk+3
@@ -14,27 +12,21 @@ make
 sudo make install
 
 ## keybinding:
-  Next: Ctrl-n, Ctrl-j, Rigth, Down
+  Next: Ctrl-n, Ctrl-j, Ctrl-Rigth, Tab, Down
 
-  Previus: Ctr-p, Ctrl-k, Left, Up
+  Previus: Ctr-p, Ctrl-k, Ctr-Left, Shift-Tab, Up
 
-  Page Next: Ctr-f.
+  Page Next: Alt-n, Alt-j
 
-  Page Previus: Ctrl-b.
+  Page Previus: Alt-p, Alt-k
 
-  Confirm Selection: Ctrl-Return, Ctrl-m
+  Confirm Selection: Return, Ctrl-Return, Ctrl-m
 
   Copy selection: Shift-Return.
 
-  Edit:
+##  Edit:
+        gtkentry keybindings
 
-  delete previous char: Ctrl-h.
-
-  delete previuos word: Ctrl-u.
-
-  For custom keybind copy DATADIR/share/t4/t4.css to CONFIGDIR/t4/t4.css.
-
-  And edit colors and font and keybindings.
 
 ## geometry:
   Precedence en axis x is W > x in all modes
@@ -55,3 +47,4 @@ sudo make install
 
   With -w --windowid in X11 embed in app.
 
+## Don't use geometry with wayland backend.
