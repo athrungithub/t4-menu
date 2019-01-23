@@ -5,7 +5,7 @@
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
 
-#define PROMPT "Launch:"
+#define PROMPT "Launch: "
 #define COMPLETION_TIMEOUT 100
 
 typedef struct
@@ -116,6 +116,41 @@ GdkRectangle rec_popup;
    return;
    }
    end debug */
+
+static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata)
+{
+  /* cairo_t *new_cr = gdk_cairo_create(gtk_widget_get_window(widget)); */
+
+  cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0); /* transparent */
+  /* draw the background */
+  cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+  cairo_paint (cr);
+
+  /* cairo_destroy(new_cr); */
+
+  return FALSE;
+}
+
+static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer userdata)
+{
+  /* To check if the display supports alpha channels, get the visual */
+  GdkScreen *screen = gtk_widget_get_screen(widget);
+  GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
+
+  if (!gdk_screen_is_composited (screen))
+    {
+      /* printf("Your screen does not support alpha channels!\n"); */
+      visual = gdk_screen_get_system_visual(screen);
+    }
+  else
+    {
+      /* printf("Your screen supports alpha channels!\n"); */
+      g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
+      g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
+    }
+
+  gtk_widget_set_visual(widget, visual);
+}
 
 void
 ver_page_next (void)
@@ -540,7 +575,7 @@ parse_opt (int *argc, char ***argv)
         { "prompt-color", 0, 0, G_OPTION_ARG_STRING, &(opt->prompt_color),
           "prompt color", NULL,
         },
-        { "prompt-backgroung", 0, 0, G_OPTION_ARG_STRING, &(opt->prompt_back_color),
+        { "prompt-background", 0, 0, G_OPTION_ARG_STRING, &(opt->prompt_back_color),
           "prompt background color", NULL,
         },
         { "windowid", 'w', 0, G_OPTION_ARG_STRING, &(opt->w),
@@ -724,6 +759,11 @@ completion (void)
   gtk_widget_set_name (popup->window, "popup");
   gtk_window_set_resizable (GTK_WINDOW (popup->window), FALSE);
   gtk_window_set_type_hint (GTK_WINDOW (popup->window), GDK_WINDOW_TYPE_HINT_COMBO);
+
+  /* transparency */
+  gtk_widget_set_app_paintable(popup->window, TRUE);
+  g_signal_connect(G_OBJECT(popup->window), "screen-changed", G_CALLBACK(screen_changed), NULL);
+  screen_changed (popup->window, NULL, NULL);
 
   /* add signal */
   gtk_container_add (GTK_CONTAINER (popup->scrolled), popup->flow);
@@ -990,9 +1030,11 @@ main (int argc, char *argv[])
   gtk_window_set_resizable (GTK_WINDOW (top->window), FALSE);
   gtk_window_set_skip_pager_hint (GTK_WINDOW (top->window), FALSE);
   gtk_window_set_skip_taskbar_hint(GTK_WINDOW (top->window), FALSE);
-
+  gtk_widget_set_app_paintable(top->window, TRUE);
   g_signal_connect (top->window, "destroy",
                     G_CALLBACK (gtk_main_quit), &top->window);
+  g_signal_connect(G_OBJECT(top->window), "screen-changed", G_CALLBACK(screen_changed), NULL);
+  screen_changed(top->window, NULL, NULL);
 
 
   hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
