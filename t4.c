@@ -792,7 +792,6 @@ output (GtkWidget *fbox, GtkWidget *child, gpointer data)
       st = gtk_entry_get_text (GTK_ENTRY (top->entry));
     }
   g_print ("%s\n", st);
-  gtk_widget_destroy (popup->window);
   gtk_main_quit();
 }
 
@@ -813,8 +812,6 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
 
   if (KEY(Escape) || CONTROL(c))
     {
-      gtk_widget_destroy (popup->window);
-      gtk_widget_destroy (top->window);
       gtk_main_quit ();
       exit (-1);
     }
