@@ -1,6 +1,10 @@
 # t4-menu
 menu system. little dmenu clone.
 
+## Use:
+  j4-dmenu-desktop --dmenu="t4 [options]"
+  ls /usr/bin | t4 [options] | /bin/sh "$@"
+  dmenu_path | t4 [options] | /bin/sh "$@"
 
 ## Install:
 depend: gtk+3
@@ -48,3 +52,18 @@ sudo make install
   With -w --windowid in X11 embed in app.
 
 ## Don't use geometry with wayland backend.
+  For sway view sample config for testing, copy to $HOME/sway/config.d/
+
+## Font and Color settings
+  Font: use pango form
+
+  Color:
+    from gtk-doc
+    CSS allows to specify colors in various ways, using numeric values or names from a predefined list of colors.
+
+    〈color〉 = currentColor | transparent | 〈color name〉 | 〈rgb color〉 | 〈rgba color〉 | 〈hex color〉 | 〈gtk color〉
+    〈rgb color〉 = rgb( 〈number〉, 〈number〉, 〈number〉 ) | rgb( 〈percentage〉, 〈percentage〉, 〈percentage〉 )
+    〈rgba color〉 = rgba( 〈number〉, 〈number〉, 〈number〉, 〈alpha value〉 ) | rgba( 〈percentage〉, 〈percentage〉, 〈percentage〉, 〈alpha value〉 )
+    〈hex color〉 = #〈hex digits〉
+    〈alpha value〉 = 〈number〉, clamped to values between 0 and 1
+  (warning, no have default colors,set color, is totaly transparent)

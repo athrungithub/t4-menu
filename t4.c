@@ -5,7 +5,7 @@
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
 
-#define PROMPT "Launch: "
+#define PROMPT "Launch:\t"
 #define COMPLETION_TIMEOUT 100
 
 typedef struct
@@ -56,6 +56,7 @@ struct
 {
   GdkMonitor *mon;
   GdkRectangle area;
+  const gchar *name;
 } monitor;
 
 GdkRectangle rec_win;
@@ -304,6 +305,7 @@ monitor_set (GtkWidget *w)
       monitor.mon = gdk_display_get_monitor_at_window (display, window);
       gdk_monitor_get_geometry (monitor.mon, &monitor.area);
     }
+  monitor.name =  gdk_display_get_name (display);
   return;
 }
 
@@ -404,8 +406,6 @@ g_horizontal (void)
   gtk_widget_set_size_request (popup->window, rec_popup.width, rec_popup.height);
   gtk_window_move (GTK_WINDOW (popup->window), rec_popup.x, rec_popup.y);
 
-
-
   return;
 }
 
@@ -442,14 +442,14 @@ g_popup_resize (void)
       if (rec_popup.height > rec_win.y)
         rec_popup.height = rec_win.y;
       rec_popup.y = rec_win.y - rec_popup.height <= 0 ? 0 : rec_win.y - rec_popup.height;
+      if (strstr (monitor.name, "wayland"))
+        rec_popup.y = -(rec_popup.height + rec_win.y + rec_win.height- monitor.area.height);
     }
   else
     {
       if (rec_popup.height >= (monitor.area.height - (rec_win.y - monitor.area.y) + rec_win.height))
         rec_popup.height = monitor.area.height - (rec_win.y - monitor.area.y) - rec_win.height;
       rec_popup.y = rec_win.y + rec_win.height;
-      /* g_message ("y: %i\theight %i\tmy %i\tmheight %i\n", rec_popup.y, rec_popup.height, */
-      /* monitor.area.y, monitor.area.height); */
     }
 
   if (popup->count_child < 3)
@@ -460,7 +460,17 @@ g_popup_resize (void)
                                     GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
   gtk_widget_set_size_request (popup->window, rec_popup.width, rec_popup.height);
-  gtk_window_move (GTK_WINDOW (popup->window), rec_popup.x, rec_popup.y);
+  if (strstr (monitor.name, "wayland"))
+    {
+      gtk_widget_hide (popup->window);
+      gtk_window_move (GTK_WINDOW (popup->window), rec_popup.x, rec_popup.y);
+      gtk_widget_show (popup->window);
+    }
+  else
+    {
+      gtk_window_move (GTK_WINDOW (popup->window), rec_popup.x, rec_popup.y);
+      gtk_widget_show (popup->window);
+    }
 
   return;
 }
@@ -604,7 +614,7 @@ parse_opt (int *argc, char ***argv)
   if (opt->v)
     {
       fprintf (stdout, "%s - version: %s\nbuild date: %s\n", NAME, VERSION,  BUILDDATE);
-      fprintf (stdout, "%s\n","Copyright © 2018 Athrun <athrun@arnet.com.ar>");
+      fprintf (stdout, "%s\n","Copyright © 2018 Alberto Higashikadoguchi <athrun@arnet.com.ar>");
       exit (EXIT_SUCCESS);
     }
 
@@ -753,7 +763,6 @@ completion (void)
                                        GTK_SHADOW_NONE);
   gtk_flow_box_set_selection_mode (GTK_FLOW_BOX (popup->flow), GTK_SELECTION_BROWSE);
 
-
   /* pack it all */
   popup->window = gtk_window_new (GTK_WINDOW_POPUP);
   gtk_widget_set_name (popup->window, "popup");
@@ -769,7 +778,7 @@ completion (void)
   gtk_container_add (GTK_CONTAINER (popup->scrolled), popup->flow);
   gtk_container_add (GTK_CONTAINER (popup->window), popup->scrolled);
 
-  gtk_widget_show_all (popup->scrolled);
+  /* gtk_widget_show_all (popup->scrolled); */
   /* debug */
   return;
 }
@@ -1079,8 +1088,10 @@ main (int argc, char *argv[])
     {
       g_signal_connect (G_OBJECT (top->entry), "focus-out-event",
                         G_CALLBACK (gtk_main_quit), NULL);
-      g_signal_connect (G_OBJECT (popup->window), "focus-out-event",
-                        G_CALLBACK (gtk_main_quit), NULL);
+      /*
+       * g_signal_connect (G_OBJECT (popup->window), "focus-out-event",
+       *                   G_CALLBACK (gtk_main_quit), NULL);
+       */
     }
 
   gtk_main ();
