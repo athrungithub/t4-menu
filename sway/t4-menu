@@ -23,7 +23,7 @@ for_window [app_id="$BH"] floating enable, move position 0px 1056px
 
 set $t4 Menu (1)$TLL (2)BLL (3)$TRL (4)$BRL (5)$TML (6)$BML (7)$BWL (8)$BH
 mode "$t4" {
-    bindsym 1 exec dmenu_path | t4 -n -W 300 -l 20 --name=$TLL ,mode "default"
+    bindsym 1 exec dmenu_path | t4 -n -W 300 -l 20 --name=$TLL, mode "default"
     bindsym 2 exec dmenu_path | t4 -n -W 300 -l 20 -b --name=$BLL ,mode "default"
     bindsym 3 exec dmenu_path | t4 -n -W 300 -l 20 --name=$TRL ,mode "default"
     bindsym 4 exec dmenu_path | t4 -n -W 300 -l 20 -b --name=$BRL ,mode "default"
@@ -35,3 +35,5 @@ mode "$t4" {
     bindsym Escape mode "default"
 }
 bindsym $mod+t mode "$t4"
+
+for_window [app_id="^t4$"] floating enable, move position 0px 0px

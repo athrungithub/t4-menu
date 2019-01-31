@@ -1020,7 +1020,10 @@ static gboolean
 focus_out_event_cb (GtkWidget *w, GdkEvent *e, gpointer data)
 {
   GtkWidget *pop = (GtkWidget *) data;
-  gtk_widget_hide (pop);
+  if (opt->n)
+    gtk_widget_hide (pop);
+  else
+    gtk_main_quit ();
   return GDK_EVENT_PROPAGATE;
 }
 
@@ -1067,6 +1070,14 @@ main (int argc, char *argv[])
 
   set_style (top->entry);
 
+  /* close popup window on lost focus */
+  gtk_widget_add_events(top->entry, GDK_FOCUS_CHANGE_MASK);
+
+  g_signal_connect (G_OBJECT(top->entry), "focus-out-event",
+                    G_CALLBACK(focus_out_event_cb), popup->window);
+  g_signal_connect_swapped (G_OBJECT(top->entry), "focus-in-event",
+                           G_CALLBACK(gtk_widget_show_all),popup->window);
+
   read_input ();
 
   /* gtk_window_set_attached_to (GTK_WINDOW (top->window), popup->window); */
@@ -1081,22 +1092,6 @@ main (int argc, char *argv[])
       g_horizontal ();
     }
   gtk_widget_set_can_focus (popup->flow, TRUE);
-
-  /* close popup window on lost focus */
-  gtk_widget_add_events(top->entry, GDK_FOCUS_CHANGE_MASK);
-
-  if (opt->n)
-    {
-      g_signal_connect (G_OBJECT(top->entry), "focus-out-event",
-                        G_CALLBACK(focus_out_event_cb), popup->window);
-      g_signal_connect_swapped (G_OBJECT(top->entry), "focus-in-event",
-                                G_CALLBACK(gtk_widget_show_all),popup->window);
-    }
-  else
-    {
-      g_signal_connect (G_OBJECT (top->entry), "focus-out-event",
-                        G_CALLBACK (gtk_main_quit), NULL);
-    }
 
   gtk_main ();
 
