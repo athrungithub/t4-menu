@@ -12,7 +12,7 @@ PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/share/man
 DATAPREFIX = $(PREFIX)/share
 
-CFLAGS  += -g
+CFLAGS  += -g -Wall
 LDFLAGS ?= -Wall
 CFLAGS  += $(shell pkg-config --cflags gtk+-3.0)
 LDFLAGS += $(shell pkg-config --libs gtk+-3.0)

@@ -33,6 +33,7 @@ struct Top
   GtkWidget *window;
   GtkWidget *entry;
   GtkWidget *prompt;
+  char *env_sway;
 };
 struct Top *top;
 
@@ -246,15 +247,6 @@ hor_page_next (GtkAdjustment *a, gpointer data)
 
   if (!gtk_widget_is_visible (popup->flow))
     return;
-  /* debug
-     g_print ("value: %g\nlower: %g\nupper %g\nstep_increment %g\npage_increment: %g\npage_size %g\n\n",
-     gtk_adjustment_get_value (adj),
-     gtk_adjustment_get_lower (adj),
-     gtk_adjustment_get_upper (adj),
-     gtk_adjustment_get_step_increment (adj),
-     gtk_adjustment_get_page_increment (adj),
-     gtk_adjustment_get_page_size (adj));
-     */
 
   double value = gtk_adjustment_get_value (adj);
   double page_size =  gtk_adjustment_get_page_size (adj);
@@ -417,6 +409,7 @@ g_popup_resize (void)
   gint child_height, tmp, tmp_lim;
 
   gtk_widget_show_all (popup->window);
+  gtk_widget_show_all (top->window);
 
   rec_popup.width = rec_win.width;
   rec_popup.x = rec_win.x;
@@ -763,6 +756,9 @@ completion (void)
                                        GTK_SHADOW_NONE);
   gtk_flow_box_set_selection_mode (GTK_FLOW_BOX (popup->flow), GTK_SELECTION_BROWSE);
 
+  gtk_widget_show (popup->flow);
+  gtk_widget_show (popup->scrolled);
+
   /* pack it all */
   popup->window = gtk_window_new (GTK_WINDOW_POPUP);
   gtk_widget_set_name (popup->window, "popup");
@@ -778,8 +774,6 @@ completion (void)
   gtk_container_add (GTK_CONTAINER (popup->scrolled), popup->flow);
   gtk_container_add (GTK_CONTAINER (popup->window), popup->scrolled);
 
-  /* gtk_widget_show_all (popup->scrolled); */
-  /* debug */
   return;
 }
 
@@ -921,42 +915,6 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
 #undef KEY
 }
 
-static gboolean
-entry_completion_timeout (gpointer data)
-{
-  gchar *tmp;
-  GtkFlowBoxChild *b_child;
-  gboolean b;
-
-  b_child = gtk_flow_box_get_child_at_index (GTK_FLOW_BOX (popup->flow), 0);
-  if (!b_child)
-    return 0;
-  g_free (popup->key);
-
-  tmp = g_utf8_normalize (gtk_entry_get_text (GTK_ENTRY (top->entry)),
-                          -1, G_NORMALIZE_ALL);
-  popup->key = g_utf8_casefold (tmp, -1);
-  g_free (tmp);
-
-  gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
-
-  if (opt->l )
-    {
-      g_popup_resize ();
-    }
-  if (popup->count_child)
-    {
-      gtk_widget_show_all (popup->window);
-      g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
-    }
-  else
-    {
-      gtk_widget_hide (popup->window);
-    }
-  popup->completion_timeout = 0;
-  return G_SOURCE_REMOVE;
-}
-
 static void
 changed_cb (GtkWidget *widget, gpointer data)
 {
@@ -971,11 +929,6 @@ changed_cb (GtkWidget *widget, gpointer data)
 
   popup->child_first = NULL;
   popup->count_child = 0;
-
-  /* popup->completion_timeout = gdk_threads_add_timeout (COMPLETION_TIMEOUT, */
-  /* entry_completion_timeout, */
-  /* NULL); */
-  /* g_source_set_name_by_id (popup->completion_timeout, "[gtk+] entry_completion_timeout"); */
 
   gchar *tmp;
   GtkFlowBoxChild *b_child;
@@ -1014,7 +967,10 @@ static gboolean
 focus_out_event_cb (GtkWidget *w, GdkEvent *e, gpointer data)
 {
   GtkWidget *pop = (GtkWidget *) data;
-  gtk_widget_hide (pop);
+  if (opt->n)
+    gtk_widget_hide (pop);
+  else
+    gtk_main_quit ();
   return GDK_EVENT_PROPAGATE;
 }
 
@@ -1042,6 +998,8 @@ main (int argc, char *argv[])
   g_signal_connect(G_OBJECT(top->window), "screen-changed", G_CALLBACK(screen_changed), NULL);
   screen_changed(top->window, NULL, NULL);
 
+  /* for sway */
+  top->env_sway = getenv ("SWAYSOCK");
 
   hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_container_add (GTK_CONTAINER (top->window), hbox);
@@ -1059,9 +1017,16 @@ main (int argc, char *argv[])
 
   set_style (top->entry);
 
+  /* close popup window on lost focus */
+  gtk_widget_add_events(top->entry, GDK_FOCUS_CHANGE_MASK);
+
+  g_signal_connect (G_OBJECT(top->entry), "focus-out-event",
+                    G_CALLBACK(focus_out_event_cb), popup->window);
+  g_signal_connect_swapped (G_OBJECT(top->entry), "focus-in-event",
+                           G_CALLBACK(gtk_widget_show_all),popup->window);
+
   read_input ();
 
-  /* gtk_window_set_attached_to (GTK_WINDOW (top->window), popup->window); */
   gtk_window_set_transient_for (GTK_WINDOW (popup->window), GTK_WINDOW (top->window));
 
   if (opt->l)
@@ -1074,25 +1039,11 @@ main (int argc, char *argv[])
     }
   gtk_widget_set_can_focus (popup->flow, TRUE);
 
-  gtk_widget_add_events(top->entry, GDK_FOCUS_CHANGE_MASK);
-
-  /* close popup window on lost focus */
-  if (opt->n)
-    {
-      g_signal_connect (G_OBJECT(top->entry), "focus-out-event",
-                        G_CALLBACK(focus_out_event_cb), popup->window);
-      g_signal_connect_swapped (G_OBJECT(top->entry), "focus-in-event",
-                                G_CALLBACK(gtk_widget_show_all),popup->window);
-    }
-  else
-    {
-      g_signal_connect (G_OBJECT (top->entry), "focus-out-event",
-                        G_CALLBACK (gtk_main_quit), NULL);
-      /*
-       * g_signal_connect (G_OBJECT (popup->window), "focus-out-event",
-       *                   G_CALLBACK (gtk_main_quit), NULL);
-       */
-    }
+  /* sway: dispara el event "focus-in-event"
+   * and show popup-window on starup
+   */
+  if (top->env_sway)
+      gtk_widget_hide (popup->window);
 
   gtk_main ();
 
