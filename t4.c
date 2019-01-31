@@ -33,6 +33,7 @@ struct Top
   GtkWidget *window;
   GtkWidget *entry;
   GtkWidget *prompt;
+  char *env_sway;
 };
 struct Top *top;
 
@@ -406,6 +407,9 @@ g_horizontal (void)
   gtk_widget_set_size_request (popup->window, rec_popup.width, rec_popup.height);
   gtk_window_move (GTK_WINDOW (popup->window), rec_popup.x, rec_popup.y);
 
+  if (top->env_sway)
+      gtk_widget_hide (popup->window);
+
   return;
 }
 
@@ -417,6 +421,7 @@ g_popup_resize (void)
   gint child_height, tmp, tmp_lim;
 
   gtk_widget_show_all (popup->window);
+  gtk_widget_show_all (top->window);
 
   rec_popup.width = rec_win.width;
   rec_popup.x = rec_win.x;
@@ -545,6 +550,9 @@ g_vertical (void)
 
   g_popup_resize ();
 
+  /* for sway delete if fix */
+  if (top->env_sway)
+      gtk_widget_hide (popup->window);
   return;
 }
 
@@ -763,6 +771,9 @@ completion (void)
                                        GTK_SHADOW_NONE);
   gtk_flow_box_set_selection_mode (GTK_FLOW_BOX (popup->flow), GTK_SELECTION_BROWSE);
 
+  gtk_widget_show (popup->flow);
+  gtk_widget_show (popup->scrolled);
+
   /* pack it all */
   popup->window = gtk_window_new (GTK_WINDOW_POPUP);
   gtk_widget_set_name (popup->window, "popup");
@@ -778,8 +789,6 @@ completion (void)
   gtk_container_add (GTK_CONTAINER (popup->scrolled), popup->flow);
   gtk_container_add (GTK_CONTAINER (popup->window), popup->scrolled);
 
-  /* gtk_widget_show_all (popup->scrolled); */
-  /* debug */
   return;
 }
 
@@ -921,6 +930,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
 #undef KEY
 }
 
+# if 0
 static gboolean
 entry_completion_timeout (gpointer data)
 {
@@ -956,6 +966,7 @@ entry_completion_timeout (gpointer data)
   popup->completion_timeout = 0;
   return G_SOURCE_REMOVE;
 }
+#endif
 
 static void
 changed_cb (GtkWidget *widget, gpointer data)
@@ -971,11 +982,6 @@ changed_cb (GtkWidget *widget, gpointer data)
 
   popup->child_first = NULL;
   popup->count_child = 0;
-
-  /* popup->completion_timeout = gdk_threads_add_timeout (COMPLETION_TIMEOUT, */
-  /* entry_completion_timeout, */
-  /* NULL); */
-  /* g_source_set_name_by_id (popup->completion_timeout, "[gtk+] entry_completion_timeout"); */
 
   gchar *tmp;
   GtkFlowBoxChild *b_child;
@@ -1042,6 +1048,8 @@ main (int argc, char *argv[])
   g_signal_connect(G_OBJECT(top->window), "screen-changed", G_CALLBACK(screen_changed), NULL);
   screen_changed(top->window, NULL, NULL);
 
+  /* for sway */
+  top->env_sway = getenv ("SWAYSOCK");
 
   hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_container_add (GTK_CONTAINER (top->window), hbox);
@@ -1074,9 +1082,9 @@ main (int argc, char *argv[])
     }
   gtk_widget_set_can_focus (popup->flow, TRUE);
 
+  /* close popup window on lost focus */
   gtk_widget_add_events(top->entry, GDK_FOCUS_CHANGE_MASK);
 
-  /* close popup window on lost focus */
   if (opt->n)
     {
       g_signal_connect (G_OBJECT(top->entry), "focus-out-event",
@@ -1088,10 +1096,6 @@ main (int argc, char *argv[])
     {
       g_signal_connect (G_OBJECT (top->entry), "focus-out-event",
                         G_CALLBACK (gtk_main_quit), NULL);
-      /*
-       * g_signal_connect (G_OBJECT (popup->window), "focus-out-event",
-       *                   G_CALLBACK (gtk_main_quit), NULL);
-       */
     }
 
   gtk_main ();
