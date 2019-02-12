@@ -650,9 +650,7 @@ set_style (GtkWidget *w)
   GString *style = g_string_new(NULL);
   if (opt->f)
     {
-      g_string_append_printf (style, "#Prompt{font: %s;}", opt->f);
-      g_string_append_printf (style, "flowbox{font: %s;}", opt->f);
-      g_string_append_printf (style, "entry{font: %s;}", opt->f);
+      g_string_append_printf (style, "* {font: %s;}", opt->f);
     }
   if (opt->color)
     {

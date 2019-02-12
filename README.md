@@ -55,7 +55,7 @@ sudo make install
   For sway view sample config for testing, copy to $HOME/sway/config.d/
 
 ## Font and Color settings
-  Font: use pango form
+  Font: use css form. Ex "10px Sans"
 
   Color:
     from gtk-doc
