@@ -1,0 +1,9 @@
+#!/bin/sh
+
+apps=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]?)|recurse(.floating_nodes[]?) | select(.type=="con"),select(.type=="floating_con")| (.id|tostring)+" "+.app_id+": "+ .name')
+
+select=$(echo "$apps" | t4 -l 20 -W 400 | awk '{print $1}')
+
+[ -z $select ] && exit
+
+swaymsg "[con_id="${select}"] focus"

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# based on: https://github.com/cdown/passmenu
+
+shopt -s nullglob globstar
+
+prefix=${PASSWORD_STORE_DIR:-~/.password-store}
+files=( "$prefix"/**/*.gpg )
+files=( "${files[@]#"$prefix"/}" )
+files=( "${files[@]%.gpg}" )
+# fbase=( "${files[@]##*/}" )
+
+word=$(printf '%s\n' "${files[@]}" | t4 -l 10 -p "Password" -f "12px Merriweather" -W 300 --name "TopMiddleList" --prompt-background="rgba(40,40,250,0.8)" $@)
+
+if [[ -n $word ]]; then
+    wl-copy -o $(/usr/bin/pass show  "$word" 2>/dev/null)
+    notify-send -a pass "Password copied to the clipboard"
+fi
