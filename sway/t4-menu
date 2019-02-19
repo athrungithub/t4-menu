@@ -1,7 +1,7 @@
 # start dmenu (a program launcher)
 floating_minimum_size 75 x 18
 for_window [app_id="top"] floating enable, move position 0px 0px
-bindsym $mod+d exec j4-dmenu-desktop --display-binary --dmenu="t4 -n --name="top""
+bindsym $mod+d exec j4-dmenu-desktop --display-binary --dmenu="t4 --name="top""
 
 set $TLL TopLeftList
 set $BLL BottomLeftList
