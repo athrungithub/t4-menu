@@ -57,7 +57,7 @@ struct
 {
   GdkMonitor *mon;
   GdkRectangle area;
-  const gchar *name;
+  /* const gchar *name; */
   gboolean wayland_backend;
 } monitor;
 
@@ -299,7 +299,6 @@ monitor_set (GtkWidget *w)
       monitor.mon = gdk_display_get_monitor_at_window (display, window);
       gdk_monitor_get_geometry (monitor.mon, &monitor.area);
     }
-  /* monitor.name =  gdk_display_get_name (display); */
   t = gdk_display_get_name (display);
   monitor.wayland_backend = !strncmp (t, "wayland", strlen("wayland"));
 
