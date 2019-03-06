@@ -58,6 +58,7 @@ struct
   GdkMonitor *mon;
   GdkRectangle area;
   const gchar *name;
+  gboolean wayland_backend;
 } monitor;
 
 GdkRectangle rec_win;
@@ -279,6 +280,7 @@ monitor_set (GtkWidget *w)
   GdkDisplay *display;
   GdkWindow *gdk;
   GdkWindow *window;
+  const char *t;
 
   if (opt->w)
     {
@@ -297,7 +299,10 @@ monitor_set (GtkWidget *w)
       monitor.mon = gdk_display_get_monitor_at_window (display, window);
       gdk_monitor_get_geometry (monitor.mon, &monitor.area);
     }
-  monitor.name =  gdk_display_get_name (display);
+  /* monitor.name =  gdk_display_get_name (display); */
+  t = gdk_display_get_name (display);
+  monitor.wayland_backend = !strncmp (t, "wayland", strlen("wayland"));
+
   return;
 }
 
@@ -435,7 +440,7 @@ g_popup_resize (void)
       if (rec_popup.height > rec_win.y)
         rec_popup.height = rec_win.y;
       rec_popup.y = rec_win.y - rec_popup.height <= 0 ? 0 : rec_win.y - rec_popup.height;
-      if (strstr (monitor.name, "wayland"))
+      if (monitor.wayland_backend)
         rec_popup.y = -(rec_popup.height + rec_win.y + rec_win.height- monitor.area.height);
     }
   else
@@ -453,7 +458,7 @@ g_popup_resize (void)
                                     GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
   gtk_widget_set_size_request (popup->window, rec_popup.width, rec_popup.height);
-  if (strstr (monitor.name, "wayland"))
+  if (monitor.wayland_backend)
     {
       gtk_widget_hide (popup->window);
       gtk_window_move (GTK_WINDOW (popup->window), rec_popup.x, rec_popup.y);
