@@ -30,6 +30,9 @@ sudo make install
 
 ##  Edit:
         gtkentry keybindings
+        if have ~/.config/gtk-3.0/gtk.css
+        import /usr/share/themes/Emacs/gtk-3.0/gtk-keys.css
+        or copy to ~/.config/gtk-3.0/gtk.css
 
 
 ## geometry:
