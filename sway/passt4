@@ -9,7 +9,7 @@ files=( "${files[@]#"$prefix"/}" )
 files=( "${files[@]%.gpg}" )
 # fbase=( "${files[@]##*/}" )
 
-word=$(printf '%s\n' "${files[@]}" | t4 -l 10 -p "Password" -f "12px Merriweather" -W 300 --name "TopMiddleList" --prompt-background="rgba(40,40,250,0.8)" $@)
+word=$(printf '%s\n' "${files[@]}" | t4 -l 10 -p "Password" -f "12px Liberation Sans" -W 300 --name "TopMiddleList" --prompt-background="rgba(40,40,250,0.8)" $@)
 
 if [[ -n $word ]]; then
     wl-copy -n -o $(/usr/bin/pass show  "$word" 2>/dev/null)
