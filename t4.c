@@ -766,15 +766,17 @@ completion (void)
   gtk_widget_set_name (popup->window, "popup");
   gtk_window_set_resizable (GTK_WINDOW (popup->window), FALSE);
   gtk_window_set_type_hint (GTK_WINDOW (popup->window), GDK_WINDOW_TYPE_HINT_COMBO);
+  GtkWidget *overlay;
+  overlay = gtk_overlay_new ();
 
   /* transparency */
   gtk_widget_set_app_paintable(popup->window, TRUE);
   g_signal_connect(G_OBJECT(popup->window), "screen-changed", G_CALLBACK(screen_changed), NULL);
   screen_changed (popup->window, NULL, NULL);
 
-  /* add signal */
   gtk_container_add (GTK_CONTAINER (popup->scrolled), popup->flow);
-  gtk_container_add (GTK_CONTAINER (popup->window), popup->scrolled);
+  gtk_container_add (GTK_CONTAINER (overlay), popup->scrolled);
+  gtk_container_add (GTK_CONTAINER (popup->window), overlay);
 
   return;
 }
