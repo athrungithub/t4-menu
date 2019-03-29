@@ -1,12 +1,14 @@
-# start dmenu (a program launcher)
+# start t4 (a program launcher)
+# This use j4-dmenu-desktop. https://github.com/enkore/j4-dmenu-desktop
 floating_minimum_size 75 x 12
 for_window [app_id="top"] floating enable, move position 0px 0px
 bindsym $mod+d exec j4-dmenu-desktop --display-binary --dmenu="t4 --name="top""
 
+# examples
 set $TLL TopLeftList
 set $BLL BottomLeftList
 set $TRL TopRigthList
-set $BRL BottomRigthList
+set $BRL BottomRightList
 set $TML TopMiddleList
 set $BML BottomMiddleList
 set $BWL BottomWideList
