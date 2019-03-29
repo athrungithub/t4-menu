@@ -698,6 +698,90 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
   return;
 }
 
+static void
+vertical_scroll (struct Popup *popup, enum scroll sc)
+{
+  gdouble value, page, upper;
+  GtkWidget *w;
+  GtkAllocation alloc;
+  gboolean b;
+
+  if (!gtk_widget_is_visible (popup->window))
+    return;
+
+  popup->adj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (popup->scrolled));
+
+  if (sc == NEXT)
+    {
+      g_signal_emit_by_name (popup->flow, "move-cursor", GTK_MOVEMENT_VISUAL_POSITIONS, 1, &b);
+      g_signal_emit_by_name (popup->flow, "toggle-cursor-child");
+      value = gtk_adjustment_get_value (popup->adj);
+      if (value != popup->lower)
+        {
+          w = gtk_container_get_focus_child (GTK_CONTAINER (popup->flow));
+          gtk_widget_get_allocation (w, &alloc);
+          popup->lower = alloc.y;
+          gtk_adjustment_set_value (popup->adj, popup->lower);
+          gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
+        }
+    }
+  if (sc == PREVIOUS)
+    {
+      gboolean b;
+      g_signal_emit_by_name (popup->flow, "move-cursor", GTK_MOVEMENT_VISUAL_POSITIONS, -1, &b);
+      g_signal_emit_by_name (popup->flow, "toggle-cursor-child");
+      value = gtk_adjustment_get_value (popup->adj);
+      if (value != popup->lower)
+        {
+          page = gtk_adjustment_get_page_size (popup->adj);
+          w = gtk_container_get_focus_child (GTK_CONTAINER (popup->flow));
+          gtk_widget_get_allocation (w, &alloc);
+          popup->lower = alloc.y + alloc.height - page;
+          gtk_adjustment_set_value (popup->adj, popup->lower);
+          gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
+        }
+    }
+  if (sc == PAGENEXT)
+    {
+      value = gtk_adjustment_get_value (popup->adj);
+      page = gtk_adjustment_get_page_size (popup->adj);
+      upper = gtk_adjustment_get_upper (popup->adj);
+      gdouble tmp;
+      if (value + page > upper)
+        tmp = upper - page;
+      else
+        tmp = value + page - 3;
+      w = (GtkWidget *) gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
+                                                       1, tmp);
+      gtk_widget_get_allocation (w, &alloc);
+      if (alloc.y + page > upper)
+        popup->lower = upper - page;
+      else
+        popup->lower = alloc.y;
+      gtk_adjustment_set_value (popup->adj, popup->lower);
+      gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
+      g_signal_emit_by_name (G_OBJECT (w), "activate");
+    }
+  if (sc == PAGEPREVIOUS)
+    {
+      value = gtk_adjustment_get_value (popup->adj);
+      page = gtk_adjustment_get_page_size (popup->adj);
+
+      w = (GtkWidget *) gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
+                                                       2, popup->lower);
+      gtk_widget_get_allocation (w, &alloc);
+      if (alloc.y - page < 0)
+        popup->lower = 0.0;
+      else
+        popup->lower = alloc.y + alloc.height - page;
+
+      gtk_adjustment_set_value (popup->adj, popup->lower);
+      gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
+      g_signal_emit_by_name (G_OBJECT (w), "activate");
+    }
+}
+
+
 static gboolean
 parse_opt (int *argc, char ***argv, struct Options *opt)
 {
@@ -706,9 +790,9 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 
   GOptionEntry entries[] =
 {
-{ "xposition", 'x', 0, G_OPTION_ARG_INT, &(opt->x), "pixels. If x > monitor width , situate to rigth screen", NULL},
-{ "yposition:", 'y', 0, G_OPTION_ARG_INT, &(opt->y), "pixels. If y > monitor height, situate to bottom screen", NULL},
-{ "width", 'W', 0, G_OPTION_ARG_INT, &(opt->W), "pixels. In vertical mode, W > monitor width -> screen width", NULL},
+{ "xposition", 'x', 0, G_OPTION_ARG_INT, &(opt->x), "<int> pixels", NULL},
+{ "yposition:", 'y', 0, G_OPTION_ARG_INT, &(opt->y),"<int> pixels", NULL},
+{ "width", 'W', 0, G_OPTION_ARG_INT, &(opt->W), "<int> pixels", NULL},
 { "lines", 'l', 0, G_OPTION_ARG_INT, &(opt->l), "lines, vertical mode", NULL},
 { "bottom", 'b', 0, G_OPTION_ARG_NONE, &(opt->b), "prompt bottom", NULL},
 { "font", 'f', 0, G_OPTION_ARG_STRING, &(opt->f), "font. \"10px Sans [style]\"", NULL},
@@ -993,11 +1077,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
   if (CONTROL(p) || CONTROL(k) || CONTROL(Left) || CONTROL(Tab) || (KEY(Up) & !CONTROL(Up)))
     {
       if (opt->l)
-        {
-          gboolean b;
-          g_signal_emit_by_name (popup->flow, "move-cursor", GTK_MOVEMENT_VISUAL_POSITIONS, -1, &b);
-          g_signal_emit_by_name (popup->flow, "toggle-cursor-child");
-        }
+        vertical_scroll (popup, PREVIOUS);
       else
         horizontal_scroll (popup, PREVIOUS);
       return TRUE;
@@ -1005,32 +1085,25 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
   if (CONTROL(n) || CONTROL(j) || CONTROL(Right) || KEY(Tab) || (KEY(Down) & !CONTROL(Down)))
     {
       if (opt->l)
-        {
-          gboolean b;
-          g_signal_emit_by_name (popup->flow, "move-cursor", GTK_MOVEMENT_VISUAL_POSITIONS, 1, &b);
-          if (!KEY(Tab))
-            g_signal_emit_by_name (popup->flow, "toggle-cursor-child");
-        }
+        vertical_scroll (popup, NEXT);
       else
         horizontal_scroll (popup, NEXT);
       return TRUE;
     }
   if (MOD1(j) || MOD1(n) || CONTROL(Down))
     {
-      if (!opt->l)
+      if (opt->l)
+        vertical_scroll (popup, PAGENEXT);
+      else
         horizontal_scroll (popup, PAGENEXT);
-      /* else */
-        /* { */
-          /* [> ver_page_next (); <] */
-        /* } */
       return TRUE;
     }
   if (MOD1(k) || MOD1(p) || CONTROL(Up))
     {
-      if (!opt->l)
+      if (opt->l)
+        vertical_scroll (popup, PAGEPREVIOUS);
+      else
         horizontal_scroll (popup, PAGEPREVIOUS);
-      /* else */
-        /* [> ver_page_back (); <] */
       return TRUE;
     }
   if (MOD1(G))
