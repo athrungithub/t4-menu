@@ -1,11 +1,10 @@
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <glib/gprintf.h>
 #include <string.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
 
-#define PROMPT "Launch:\t"
+#define PROMPT "Launch : "
 #define COMPLETION_TIMEOUT 100
 #define MINWIDTH 260    // la suma de min-width gtk-entry + gtk-label (15 caracteres)
 #define FONT "12px Sans"
@@ -689,6 +688,31 @@ set_style (struct Top *top, struct Options *opt)
   GString *str = g_string_new(NULL);
 
   g_string_printf (str,
+  " @binding-set gtk-emacs-text-entry "
+  " { "
+  "   bind '<ctrl>b' { 'move-cursor' (logical-positions, -1, 0) }; "
+  "   bind '<shift><ctrl>b' { 'move-cursor' (logical-positions, -1, 1) }; "
+  "   bind '<ctrl>f' { 'move-cursor' (logical-positions, 1, 0) }; "
+  "   bind '<shift><ctrl>f' { 'move-cursor' (logical-positions, 1, 1) }; "
+  "   bind '<alt>b' { 'move-cursor' (words, -1, 0) }; "
+  "   bind '<shift><alt>b' { 'move-cursor' (words, -1, 1) }; "
+  "   bind '<alt>f' { 'move-cursor' (words, 1, 0) }; "
+  "   bind '<shift><alt>f' { 'move-cursor' (words, 1, 1) }; "
+  "   bind '<ctrl>a' { 'move-cursor' (paragraph-ends, -1, 0) }; "
+  "   bind '<shift><ctrl>a' { 'move-cursor' (paragraph-ends, -1, 1) }; "
+  "   bind '<ctrl>e' { 'move-cursor' (paragraph-ends, 1, 0) }; "
+  "   bind '<shift><ctrl>e' { 'move-cursor' (paragraph-ends, 1, 1) }; "
+  "   bind '<ctrl>y' { 'paste-clipboard' () }; "
+  "   bind '<ctrl>d' { 'delete-from-cursor' (chars, 1) }; "
+  "   bind '<alt>d' { 'delete-from-cursor' (word-ends, 1) }; "
+  "   bind '<ctrl>k' { 'delete-from-cursor' (paragraph-ends, 1) }; "
+  "   bind '<alt>backslash' { 'delete-from-cursor' (whitespace, 1) }; "
+  "   bind '<ctrl>u' { 'move-cursor' (paragraph-ends, -1, 0) "
+  "                    'delete-from-cursor' (paragraph-ends, 1) }; "
+  "   bind '<ctrl>h' { 'delete-from-cursor' (chars, -1) }; "
+  "   bind '<ctrl>w' { 'delete-from-cursor' (word-ends, -1) }; "
+  " } "
+  " entry {-gtk-key-bindings: gtk-emacs-text-entry;}"
   " flowbox label {margin: 0px 3px; }"
   " label, entry, flowbox * {font: %s; margin:0px; padding:0px;min-height:12px; border-radius:0px; background-image:none;border:0px;}"
   " scrollbar.horizontal *, slider* {min-height:0px;border:0px; margin:0px; padding:0px; border-radius:0px;}"
@@ -764,7 +788,6 @@ completion (struct Popup *popup, struct Options *opt)
     {
       gtk_orientable_set_orientation (GTK_ORIENTABLE (popup->flow),
                                       GTK_ORIENTATION_VERTICAL);
-      /* gtk_flow_box_set_column_spacing (GTK_FLOW_BOX (popup->flow), 4); */
       gtk_widget_set_name (popup->flow, "horizontal");
 
       gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
@@ -822,7 +845,40 @@ output (struct Popup *pop, gboolean quit)
       st = gtk_entry_get_text (GTK_ENTRY (top->entry));
     }
   g_print ("%s\n", st);
-  gtk_main_quit();
+  if (quit)
+    gtk_main_quit();
+  else
+    return;
+}
+
+static void
+copy_edit (GtkWidget *entry, struct Popup *popup)
+{
+  /* confirm input, Print the input text to stdout en exit, returning success */
+  GList *l;
+  GtkLabel *lab;
+  gchar *s;
+
+  if (!gtk_widget_is_visible (popup->window))
+    return;
+  s = g_malloc (BUFSIZ);
+  l = gtk_flow_box_get_selected_children (GTK_FLOW_BOX (popup->flow));
+  lab = GTK_LABEL(gtk_bin_get_child(GTK_BIN(l->data)));
+  g_sprintf (s, "%s ", gtk_label_get_text (lab));
+  gtk_entry_set_text (GTK_ENTRY (entry), s);
+  gtk_editable_set_position (GTK_EDITABLE (entry), -1);
+  g_free (s);
+}
+
+static void
+paste_primary (GtkWidget *entry)
+{
+  /* paste primary */
+  gchar *s;
+  s = gtk_clipboard_wait_for_text (gtk_clipboard_get(GDK_SELECTION_PRIMARY));
+  gtk_entry_set_text (GTK_ENTRY (entry), s);
+  gtk_editable_set_position (GTK_EDITABLE (entry), -1);
+  g_free (s);
 }
 
 gboolean
@@ -854,39 +910,21 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
     }
   if (SHIFT(Return))
     {
-      /*confirm input, Print the input text to stdout en exit, returning success */
-      /* GList *l; */
-      /* GtkLabel *lab; */
-      /* gchar *s; */
-
-      /* if (!popup->count_child) */
-        /* return TRUE; */
-      /* s = g_malloc (BUFSIZ); */
-      /* l = gtk_flow_box_get_selected_children (GTK_FLOW_BOX (popup->flow)); */
-      /* lab = GTK_LABEL(gtk_bin_get_child(GTK_BIN(l->data))); */
-      /* g_sprintf (s, "%s ", gtk_label_get_text (lab)); */
-      /* gtk_entry_set_text (GTK_ENTRY (top->entry), s); */
-      /* gtk_editable_set_position (GTK_EDITABLE (top->entry), -1); */
-      /* g_free (s); */
-
+      copy_edit (top->entry, popup);
       return TRUE;
     }
   if (CONTROL(Return))
     {
       /* Confirm selection. Print the selected item to stdout and continues. */
+      output (popup, FALSE);
       return TRUE;
     }
   if (CONTROL(Insert))
     {
-      /* paste primary */
-      gchar *s;
-      s = gtk_clipboard_wait_for_text (gtk_clipboard_get(GDK_SELECTION_PRIMARY));
-      gtk_entry_set_text (GTK_ENTRY (top->entry), s);
-      gtk_editable_set_position (GTK_EDITABLE (top->entry), -1);
-      g_free (s);
+      paste_primary (top->entry);
       return TRUE;
     }
-  if (CONTROL(p) || CONTROL(k) || CONTROL(Left) || CONTROL(Tab) || (KEY(Up) & !CONTROL(Up)))
+  if (CONTROL(p) || CONTROL(Left) || CONTROL(Tab) || (KEY(Up) & !CONTROL(Up)))
     {
       if (opt->l)
         vertical_scroll (popup, PREVIOUS);
@@ -894,7 +932,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
         horizontal_scroll (popup, PREVIOUS);
       return TRUE;
     }
-  if (CONTROL(n) || CONTROL(j) || CONTROL(Right) || KEY(Tab) || (KEY(Down) & !CONTROL(Down)))
+  if (CONTROL(n) || CONTROL(Right) || KEY(Tab) || (KEY(Down) & !CONTROL(Down)))
     {
       if (opt->l)
         vertical_scroll (popup, NEXT);
@@ -902,7 +940,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
         horizontal_scroll (popup, NEXT);
       return TRUE;
     }
-  if (MOD1(j) || MOD1(n) || CONTROL(Down))
+  if (MOD1(j) || MOD1(n) || CONTROL(Down) || KEY(Page_Down))
     {
       if (opt->l)
         vertical_scroll (popup, PAGENEXT);
@@ -910,7 +948,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
         horizontal_scroll (popup, PAGENEXT);
       return TRUE;
     }
-  if (MOD1(k) || MOD1(p) || CONTROL(Up))
+  if (MOD1(k) || MOD1(p) || CONTROL(Up) || KEY(Page_Up))
     {
       if (opt->l)
         vertical_scroll (popup, PAGEPREVIOUS);
@@ -918,7 +956,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
         horizontal_scroll (popup, PAGEPREVIOUS);
       return TRUE;
     }
-  if (MOD1(G))
+  if (MOD1(G) || KEY(End))
     {
       if (opt->l)
         vertical_scroll (popup, END);
@@ -926,7 +964,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
         horizontal_scroll (popup, END);
       return TRUE;
     }
-  if (MOD1(g))
+  if (MOD1(g) || KEY(Home))
     {
       if (opt->l)
         vertical_scroll (popup, FIRST);
@@ -970,9 +1008,8 @@ changed_cb (GtkWidget *entry, gpointer data)
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
   if (opt->l )
-    {
       g_popup_resize (top, popup, opt);
-    }
+
   if (popup->count_child)
     {
       gtk_widget_show_all (popup->window);
