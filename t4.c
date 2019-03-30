@@ -94,65 +94,6 @@ enum scroll {
     END,
 };
 
-/* GdkRectangle rec_win; */
-/* GdkRectangle rec_popup; */
-
-/* debug
-   void
-   adj_changes_h (GtkAdjustment *a, gpointer data)
-   {
-   GtkAdjustment *adj;
-   GtkFlowBoxChild *child;
-   static double value_old;
-   double value, upper, lower, step_increment, page_increment, page_size;
-   gint tmp;
-
-   if (!gtk_widget_is_visible (popup->flow))
-   return;
-
-   g_message ("Changed???");
-   adj = gtk_scrolled_window_get_hadjustment (GTK_SCROLLED_WINDOW (popup->scrolled));
-   g_print ("value: %g\nlower: %g\nupper %g\nstep_increment %g\npage_increment: %g\npage_size %g\n\n",
-   gtk_adjustment_get_value (adj),
-   gtk_adjustment_get_lower (adj),
-   gtk_adjustment_get_upper (adj),
-   gtk_adjustment_get_step_increment (adj),
-   gtk_adjustment_get_page_increment (adj),
-   gtk_adjustment_get_page_size (adj));
-   value = gtk_adjustment_get_value (adj);
-   page_size = gtk_adjustment_get_page_size (adj);
-   upper = gtk_adjustment_get_upper (adj);
-   step_increment = gtk_adjustment_get_step_increment (adj);
-   page_increment = gtk_adjustment_get_page_increment (adj);
-   lower = gtk_adjustment_get_lower (adj);
-
-   child = gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
-   (gint) value,
-   rec_popup.height - 3);
-
-   if (value < lower)
-   {
-   lower = value - page_size;
-   upper = value;
-   }
-   else
-   {
-   lower = value;
-   upper = value + page_size;
-   }
-
-   gtk_adjustment_configure (adj, value, lower, upper, step_increment,
-   page_increment, page_size);
-   gtk_adjustment_set_lower (adj, lower);
-   gtk_adjustment_set_upper (adj, upper);
-
-   gtk_flow_box_set_hadjustment (GTK_FLOW_BOX (popup->flow), adj);
-   g_signal_emit_by_name (G_OBJECT (child), "activate");
-
-   return;
-   }
-   end debug */
-
 static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata)
 {
   /* cairo_t *new_cr = gdk_cairo_create(gtk_widget_get_window(widget)); */
@@ -221,6 +162,7 @@ monitor_set (struct Top *top, struct Options *opt)
   return;
 }
 
+/* Horizontal {{{1 */
 void
 g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
 {
@@ -305,13 +247,11 @@ g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
       pop->rect.y += top->monitor->area.y;
     }
 
-
   gtk_widget_set_size_request (top->window, top->rect.width, -1);
   gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
 
   gtk_widget_set_size_request (pop->window, pop->rect.width, -1);
   gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
-
 
   return;
 }
@@ -371,10 +311,7 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
         tmp = value + page;
 
       w = (GtkWidget *) gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
-                                                       tmp, popup->rect.height / 2);
-      if (!w)
-        w = (GtkWidget *) gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
-                                          tmp - 5, popup->rect.height / 2);
+                                                       tmp - 1, popup->rect.height / 2);
       gtk_widget_get_allocation (w, &alloc);
       if (alloc.x + page > upper)
         popup->lower = upper - page;
@@ -391,9 +328,6 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
 
       w = (GtkWidget *) gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
                                                        popup->lower, popup->rect.height / 2);
-      if (!w)
-        w = (GtkWidget *) gtk_flow_box_get_child_at_pos (GTK_FLOW_BOX (popup->flow),
-                                                       popup->lower + 5, popup->rect.height / 2);
       gtk_widget_get_allocation (w, &alloc);
       if (alloc.x - page < 0)
         popup->lower = 0.0;
@@ -419,12 +353,12 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
     }
 
 }
+/* }}}1 */
 
 void
 g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
 {
   GList *list;
-  /* gint count; */
   gint child_height, tmp, tmp_lim;
 
   gtk_widget_show_all (popup->window);
@@ -545,7 +479,6 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
     {
       top->rect.y = !opt->y ? 0 : opt->y < (top->monitor->area.height -  2 * top->rect.height) ?
         opt->y : 0;
-      /* (top->monitor->area.height - 2 * top->rect.height); */
     }
 
   if (opt->w)
@@ -664,7 +597,6 @@ vertical_scroll (struct Popup *popup, enum scroll sc)
     }
 }
 
-
 static gboolean
 parse_opt (int *argc, char ***argv, struct Options *opt)
 {
@@ -707,15 +639,13 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 "Color:\n"
 "\t ");
 
-
   if (!g_option_context_parse (context, argc, argv, &error))
     {
       g_print ("option parsing failed: %s\n", error->message);
     }
-
   if (opt->v)
     {
-      /* fprintf (stdout, "%s - version: %s\nbuild date: %s\n", NAME, VERSION,  BUILDDATE); */
+      fprintf (stdout, "%s - version: %s\nbuild date: %s\n", NAME, VERSION,  BUILDDATE);
       fprintf (stdout, "%s\n","Copyright © 2018 Alberto Higashikadoguchi <athrun@arnet.com.ar>");
       exit (EXIT_SUCCESS);
     }
@@ -740,8 +670,7 @@ read_input (struct Popup *popup)
       /* gtk_label_set_ellipsize (GTK_LABEL (tmp), PANGO_ELLIPSIZE_MIDDLE); */
       if (opt->l )
         {
-          gtk_label_set_xalign (GTK_LABEL(tmp), 0);
-          gtk_label_set_line_wrap(GTK_LABEL(tmp), FALSE);
+          gtk_widget_set_halign (tmp, GTK_ALIGN_START);
           gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
         }
       gtk_container_add (GTK_CONTAINER (popup->flow), tmp);
@@ -760,6 +689,7 @@ set_style (struct Top *top, struct Options *opt)
   GString *str = g_string_new(NULL);
 
   g_string_printf (str,
+  " flowbox label {margin: 0px 3px; }"
   " label, entry, flowbox * {font: %s; margin:0px; padding:0px;min-height:12px; border-radius:0px; background-image:none;border:0px;}"
   " scrollbar.horizontal *, slider* {min-height:0px;border:0px; margin:0px; padding:0px; border-radius:0px;}"
   " flowboxchild:not(:selected) label, flowbox {color: %s; background-color: %s;}"
@@ -834,7 +764,7 @@ completion (struct Popup *popup, struct Options *opt)
     {
       gtk_orientable_set_orientation (GTK_ORIENTABLE (popup->flow),
                                       GTK_ORIENTATION_VERTICAL);
-      gtk_flow_box_set_column_spacing (GTK_FLOW_BOX (popup->flow), 4);
+      /* gtk_flow_box_set_column_spacing (GTK_FLOW_BOX (popup->flow), 4); */
       gtk_widget_set_name (popup->flow, "horizontal");
 
       gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
@@ -911,7 +841,6 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
 #define CONTROL(x)  (KEY(x) && state & GDK_CONTROL_MASK)
 #define SHIFT(x)    (KEY(x) && state & GDK_SHIFT_MASK)
 #define MOD1(x)     (KEY(x) && state & GDK_MOD1_MASK)
-
 
   if (KEY(Escape) || CONTROL(c))
     {
@@ -1086,7 +1015,6 @@ main (int argc, char *argv[])
   pop.opt = &opt;
   pop.top = &top;
 
-
   gtk_init (&argc, &argv);
   parse_opt (&argc, &argv, &opt);
 
@@ -1120,7 +1048,7 @@ main (int argc, char *argv[])
   set_style (&top, &opt);
 
   /* close popup window on lost focus */
-  gtk_widget_add_events(top.entry, GDK_FOCUS_CHANGE_MASK);
+  /* gtk_widget_add_events(top.entry, GDK_FOCUS_CHANGE_MASK); */
 
   g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
                     G_CALLBACK(focus_out_event_cb), &pop);
