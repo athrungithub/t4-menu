@@ -898,12 +898,12 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
 #define SHIFT(x)    (KEY(x) && state & GDK_SHIFT_MASK)
 #define MOD1(x)     (KEY(x) && state & GDK_MOD1_MASK)
 
-  if (KEY(Escape) || CONTROL(c))
+  if (KEY(Escape) || CONTROL(c) || CONTROL(g))
     {
       gtk_main_quit ();
       exit (-1);
     }
-  if ((KEY(Return) & !CONTROL(Return) & !SHIFT(Return)) || (KEY(m) && CONTROL(m)))
+  if ((KEY(Return) & !CONTROL(Return) & !SHIFT(Return)) || (KEY(m) && CONTROL(m)) || (KEY(j) && CONTROL(j)))
     {
       output (popup, TRUE);
       return TRUE;
@@ -924,7 +924,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
       paste_primary (top->entry);
       return TRUE;
     }
-  if (CONTROL(p) || CONTROL(Left) || CONTROL(Tab) || (KEY(Up) & !CONTROL(Up)))
+  if (CONTROL(p) || MOD1(h) || CONTROL(Left) || CONTROL(Tab) || (KEY(Up) & !CONTROL(Up)))
     {
       if (opt->l)
         vertical_scroll (popup, PREVIOUS);
@@ -932,7 +932,7 @@ key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
         horizontal_scroll (popup, PREVIOUS);
       return TRUE;
     }
-  if (CONTROL(n) || CONTROL(Right) || KEY(Tab) || (KEY(Down) & !CONTROL(Down)))
+  if (CONTROL(n) || MOD1(l) || CONTROL(Right) || KEY(Tab) || (KEY(Down) & !CONTROL(Down)))
     {
       if (opt->l)
         vertical_scroll (popup, NEXT);
