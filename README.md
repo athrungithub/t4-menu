@@ -1,7 +1,7 @@
 # t4-menu
 menu system. little dmenu clone.
 
-![im](https://imgur.com/29FEPA)
+![](https://i.imgur.com/29FEPAa.png)
 
 ## Use:
   j4-dmenu-desktop --dmenu="t4 [options]". https://github.com/enkore/j4-dmenu-desktop
