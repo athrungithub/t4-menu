@@ -645,7 +645,6 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
   if (opt->v)
     {
       fprintf (stdout, "%s - version: %s\nbuild date: %s\n", NAME, VERSION,  BUILDDATE);
-      fprintf (stdout, "%s\n","Copyright © 2018 Alberto Higashikadoguchi <athrun@arnet.com.ar>");
       exit (EXIT_SUCCESS);
     }
 

@@ -1,7 +1,7 @@
 # t4
 NAME = t4
 # t4-version
-VERSION = 1.0
+VERSION = `git describe --tags`
 # build date
 BUILDDATE = `date +%Y.%m.%d`
 
