@@ -122,7 +122,6 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
     {
       /* printf("Your screen supports alpha channels!\n"); */
       g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
-      g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
     }
 
   gtk_widget_set_visual(widget, visual);
