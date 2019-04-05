@@ -37,7 +37,7 @@ sudo make install
   --ec  entry color.
   --eb  entry background color.
 
-## keybinding items:
+## Keybinding items:
   Next: C-n, M-l, C-Rigth, Tab, Down
 
   Previus: C-p, M-h, C-Left, Shift-Tab, Up
@@ -57,7 +57,7 @@ sudo make install
   Shift-Return: Copy selection to the input field.
 
   Escape, C-g, C-c: Exit without selecting an item, returning failure.
-##  Edit:
+## Keybindig edit:
   C-b Left
 
   C-f Right
@@ -82,7 +82,7 @@ sudo make install
 
   C-h Backspace
 
-## geometry:
+## Geometry:
   Precedence W > x
 
   a) horizontal mode: (default)
