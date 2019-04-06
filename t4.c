@@ -10,12 +10,8 @@
 #define FONT "12px Sans"
 #define CO  "White"
 #define BC  "LightSlateGray"
-#define SC  "White"
-#define SB  "LightCyan"
 #define FC  "White"
 #define FB  "MediumBlue"
-#define SFC "White"
-#define SFB "LightCoral"
 #define PC  "White"
 #define PB  "LightSlateGray"
 #define EC  "White"
@@ -33,12 +29,8 @@ struct Options
   char *f;    // font
   char *co;   // foreground color
   char *bc;   // normal background color
-  char *sc;   // selected color
-  char *sb;   // selected background
   char *fc;   // focused color
   char *fb;   // focused background color
-  char *sfc;  // selected & focused color
-  char *sfb;  // selected & focused background color
   char *pc;   // prompt foreground color
   char *pb;   // prompt background color
   char *ec;   // entry color
@@ -606,21 +598,17 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 { "xposition", 'x', 0, G_OPTION_ARG_INT, &(opt->x), "<int> pixels", NULL},
 { "yposition:", 'y', 0, G_OPTION_ARG_INT, &(opt->y),"<int> pixels", NULL},
 { "width", 'W', 0, G_OPTION_ARG_INT, &(opt->W), "<int> pixels", NULL},
-{ "lines", 'l', 0, G_OPTION_ARG_INT, &(opt->l), "lines, vertical mode", NULL},
-{ "bottom", 'b', 0, G_OPTION_ARG_NONE, &(opt->b), "prompt bottom", NULL},
-{ "font", 'f', 0, G_OPTION_ARG_STRING, &(opt->f), "font. \"10px Sans [style]\"", NULL},
-{ "prompt", 'p', 0, G_OPTION_ARG_STRING, &(opt->p), "String prompt", NULL},
-{ "windowid", 'w', 0, G_OPTION_ARG_STRING, &(opt->w), "X11: embed into windowid.", NULL},
-{ "focus", 'n', 0, G_OPTION_ARG_NONE, &(opt->n), "No quit on lost focus", NULL},
+{ "lines", 'l', 0, G_OPTION_ARG_INT, &(opt->l), "<int>, vertical mode", NULL},
+{ "bottom", 'b', 0, G_OPTION_ARG_NONE, &(opt->b), "<strint> prompt at bottom window", NULL},
+{ "font", 'f', 0, G_OPTION_ARG_STRING, &(opt->f), "<string>. \"10px Sans\"", NULL},
+{ "prompt", 'p', 0, G_OPTION_ARG_STRING, &(opt->p), "<string> prompt", NULL},
+{ "windowid", 'w', 0, G_OPTION_ARG_STRING, &(opt->w), "<x11 winid>. embed windowid.", NULL},
+{ "focus", 'n', 0, G_OPTION_ARG_NONE, &(opt->n), "no quit on lost focus", NULL},
 { "version", 'v', 0, G_OPTION_ARG_NONE, &(opt->v), "version", NULL},
 { "nc", 0, 0, G_OPTION_ARG_STRING, &(opt->co), "normal foreground color", NULL},
 { "nb", 0, 0, G_OPTION_ARG_STRING, &(opt->bc), "normal background color", NULL},
-{ "sb", 0, 0, G_OPTION_ARG_STRING, &(opt->sb), "selected background color", NULL},
-{ "sc", 0, 0, G_OPTION_ARG_STRING, &(opt->sc), "selected color", NULL},
 { "fc", 0, 0, G_OPTION_ARG_STRING, &(opt->fc), "focused color", NULL},
 { "fb", 0, 0, G_OPTION_ARG_STRING, &(opt->fb), "focused background color", NULL},
-{ "fsc", 0, 0, G_OPTION_ARG_STRING, &(opt->sfc), "focused selected color", NULL},
-{ "fsb", 0, 0, G_OPTION_ARG_STRING, &(opt->sfb), "focused selected background color", NULL},
 { "pc", 0, 0, G_OPTION_ARG_STRING, &(opt->pc), "prompt color", NULL},
 { "pb", 0, 0, G_OPTION_ARG_STRING, &(opt->pb), "prompt background color", NULL},
 { "ec", 0, 0, G_OPTION_ARG_STRING, &(opt->ec), "entry color", NULL},
@@ -631,10 +619,13 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
   g_option_context_set_ignore_unknown_options (context, TRUE);
-  g_option_context_set_description (context, "Geometry: \n"
-"\tx > minitor width: stack to right\n"
-"\tW > monitor width: width screen\n"
-"Color:\n"
+  g_option_context_set_description (context,
+"Color format:\n"
+"\t rgba(rr,gg,bb,aa), rgb(rr,gg,bb), #rrggbb, color name.\n"
+"Font format:\n"
+"\t[style][variant][weight][strech] font-size font-family\n"
+"Geometry:\n"
+"\t x, y, W, l > monitor size, can be used"
 "\t ");
 
   if (!g_option_context_parse (context, argc, argv, &error))
@@ -643,7 +634,7 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
     }
   if (opt->v)
     {
-      fprintf (stdout, "%s - version: %s\nbuild date: %s\n", NAME, VERSION,  BUILDDATE);
+      fprintf (stdout, "version: %s\nbuild date: %s\n", VERSION,  BUILDDATE);
       exit (EXIT_SUCCESS);
     }
 
