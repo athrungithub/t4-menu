@@ -87,15 +87,9 @@ enum scroll {
 
 static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata)
 {
-  /* cairo_t *new_cr = gdk_cairo_create(gtk_widget_get_window(widget)); */
-
   cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 0.0); /* transparent */
-  /* draw the background */
   cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
   cairo_paint (cr);
-
-  /* cairo_destroy(new_cr); */
-
   return FALSE;
 }
 
@@ -106,15 +100,11 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
   GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
 
   if (!gdk_screen_is_composited (screen))
-    {
       /* printf("Your screen does not support alpha channels!\n"); */
       visual = gdk_screen_get_system_visual(screen);
-    }
   else
-    {
       /* printf("Your screen supports alpha channels!\n"); */
       g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
-    }
 
   gtk_widget_set_visual(widget, visual);
 }
@@ -381,7 +371,8 @@ g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
     }
   else
     {
-      if (popup->rect.height >= (top->monitor->area.height - (top->rect.y - top->monitor->area.y) + top->rect.height))
+      if (popup->rect.height >= (top->monitor->area.height -
+                                 (top->rect.y - top->monitor->area.y) + top->rect.height))
         popup->rect.height = top->monitor->area.height - (top->rect.y - top->monitor->area.y) - top->rect.height;
       popup->rect.y = top->rect.y + top->rect.height;
     }
@@ -439,7 +430,8 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
       if ((!opt->x))
         top->rect.x = 0;
       else if (opt->x < top->monitor->area.width)
-        top->rect.x = opt->x < top->monitor->area.width - top->rect.width ? opt->x : top->monitor->area.width - top->rect.width;
+        top->rect.x = opt->x < top->monitor->area.width - top->rect.width ?
+          opt->x : top->monitor->area.width - top->rect.width;
       else
         top->rect.x = top->monitor->area.width - top->rect.width;
     }
@@ -1074,8 +1066,6 @@ main (int argc, char *argv[])
   set_style (&top, &opt);
 
   /* close popup window on lost focus */
-  /* gtk_widget_add_events(top.entry, GDK_FOCUS_CHANGE_MASK); */
-
   g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
                     G_CALLBACK(focus_out_event_cb), &pop);
   g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event",
@@ -1086,13 +1076,9 @@ main (int argc, char *argv[])
   gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
 
   if (opt.l)
-    {
       g_vertical (&top, &pop, &opt);
-    }
   else
-    {
       g_horizontal (&top, &pop, &opt);
-    }
   gtk_widget_set_can_focus (pop.flow, TRUE);
 
   gtk_main ();
