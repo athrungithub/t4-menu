@@ -773,6 +773,7 @@ completion (struct Popup *popup, struct Options *opt)
 
       gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
                                       GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+      gtk_widget_set_halign (GTK_WIDGET (popup->flow), GTK_ALIGN_START);
 
     }
   gtk_flow_box_set_min_children_per_line (GTK_FLOW_BOX(popup->flow), 1);
