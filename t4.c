@@ -990,7 +990,14 @@ changed_cb (GtkWidget *entry, gpointer data)
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
   if (opt->l )
+  {
       g_popup_resize (top, popup, opt);
+  }
+  else
+  {
+      gtk_widget_hide (popup->window);
+      gtk_widget_show_all (popup->window);
+  }
 
   if (popup->count_child)
     {
