@@ -1075,8 +1075,7 @@ main (int argc, char *argv[])
   read_input (&pop);
 
   gtk_widget_realize (top.window);
-  /* gtk_widget_realize (pop.window); */
-  /* layer_init (top.window); */
+  layer_init (top.window);
   gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
 
   if (opt.l)
@@ -1084,8 +1083,8 @@ main (int argc, char *argv[])
   else
       g_horizontal (&top, &pop, &opt);
 
-  /* layer_set_keyboard (TRUE); */
-  /* layer_move (top.rect.x, top.rect.y); */
+  layer_set_keyboard (TRUE);
+  layer_move (top.rect.x, top.rect.y);
   gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
 
   gtk_widget_set_can_focus (pop.flow, TRUE);
