@@ -3,6 +3,7 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
+#include "layer.h"
 
 #define PROMPT "Launch : "
 #define COMPLETION_TIMEOUT 100
@@ -336,7 +337,7 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
 /* }}}1 */
 
 void
-g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
+vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
 {
   GList *list;
   gint child_height, tmp, tmp_lim;
@@ -377,12 +378,6 @@ g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
       popup->rect.y = top->rect.y + top->rect.height;
     }
 
-  if (popup->count_child < 3)
-    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
-                                    GTK_POLICY_NEVER, GTK_POLICY_NEVER);
-  else
-    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
-                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
   gtk_widget_set_size_request (popup->window, popup->rect.width, popup->rect.height);
   if (top->monitor->wayland_backend)
@@ -391,8 +386,14 @@ g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
       gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
       gtk_widget_show (popup->window);
     }
-  else
+  else  // X11
     {
+     if (popup->count_child < 3)
+         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
+                 GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+     else
+         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
+                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
       gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
       gtk_widget_show (popup->window);
     }
@@ -472,7 +473,7 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
   gtk_widget_set_size_request (top->window, top->rect.width, -1);
   gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
 
-  g_popup_resize (top, pop, opt);
+  vertical_popup_resize (top, pop, opt);
 
   return;
 }
@@ -626,7 +627,7 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
     }
   if (opt->v)
     {
-      fprintf (stdout, "version: %s\nbuild date: %s\n", VERSION,  BUILDDATE);
+      /* fprintf (stdout, "version: %s\nbuild date: %s\n", VERSION,  BUILDDATE); */
       exit (EXIT_SUCCESS);
     }
 
@@ -788,11 +789,12 @@ completion (struct Popup *popup, struct Options *opt)
   gtk_widget_show (popup->scrolled);
 
   /* pack it all */
-  popup->window = gtk_window_new (GTK_WINDOW_POPUP);
+  popup->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_name (popup->window, "popup");
   gtk_window_set_resizable (GTK_WINDOW (popup->window), FALSE);
   gtk_window_set_accept_focus (GTK_WINDOW (popup->window), FALSE);
   gtk_window_set_skip_pager_hint (GTK_WINDOW (popup->window), FALSE);
+   /* gtk_window_set_type_hint (GTK_WINDOW (popup->window), GDK_WINDOW_TYPE_HINT_DIALOG); */
   GtkWidget *overlay;
   overlay = gtk_overlay_new ();
 
@@ -989,27 +991,17 @@ changed_cb (GtkWidget *entry, gpointer data)
 
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
-  if (opt->l )
-  {
-      g_popup_resize (top, popup, opt);
-  }
-  else
-  {
-      gtk_widget_hide (popup->window);
-      gtk_widget_show_all (popup->window);
-  }
+  gtk_widget_hide (popup->window);
 
   if (popup->count_child)
     {
+      if (opt->l)
+      {
+          vertical_popup_resize (top, popup, opt);
+      }
       gtk_widget_show_all (popup->window);
       g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
     }
-  else
-    {
-      gtk_widget_hide (popup->window);
-    }
-
-  g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, TRUE, &b);
   return;
 }
 
@@ -1047,7 +1039,7 @@ main (int argc, char *argv[])
   top.window= gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_type_hint (GTK_WINDOW(top.window), GDK_WINDOW_TYPE_HINT_DIALOG);
   gtk_window_set_decorated(GTK_WINDOW(top.window), FALSE);
-  gtk_window_set_resizable (GTK_WINDOW (top.window), FALSE);
+  /* gtk_window_set_resizable (GTK_WINDOW (top.window), FALSE); */
   gtk_window_set_skip_pager_hint (GTK_WINDOW (top.window), FALSE);
   gtk_window_set_skip_taskbar_hint(GTK_WINDOW (top.window), FALSE);
   gtk_widget_set_app_paintable(top.window, TRUE);
@@ -1074,19 +1066,27 @@ main (int argc, char *argv[])
   set_style (&top, &opt);
 
   /* close popup window on lost focus */
-  g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
-                    G_CALLBACK(focus_out_event_cb), &pop);
-  g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event",
-                           G_CALLBACK(gtk_widget_show_all),pop.window);
+  /* g_signal_connect (G_OBJECT(top.entry), "focus-out-event", */
+                    /* G_CALLBACK(focus_out_event_cb), &pop); */
+  /* g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event", */
+                           /* G_CALLBACK(gtk_widget_show_all),pop.window); */
 
   read_input (&pop);
 
+  gtk_widget_realize (top.window);
+  /* gtk_widget_realize (pop.window); */
+  layer_init (top.window);
   gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
 
   if (opt.l)
       g_vertical (&top, &pop, &opt);
   else
       g_horizontal (&top, &pop, &opt);
+
+  layer_set_keyboard (TRUE);
+  layer_move (top.rect.x, top.rect.y);
+  gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
+
   gtk_widget_set_can_focus (pop.flow, TRUE);
 
   gtk_main ();
