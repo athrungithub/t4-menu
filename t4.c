@@ -792,6 +792,7 @@ completion (struct Popup *popup, struct Options *opt)
   popup->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_name (popup->window, "popup");
   gtk_window_set_resizable (GTK_WINDOW (popup->window), FALSE);
+  gtk_window_set_decorated(GTK_WINDOW(popup->window), FALSE);
   gtk_window_set_accept_focus (GTK_WINDOW (popup->window), FALSE);
   gtk_window_set_skip_pager_hint (GTK_WINDOW (popup->window), FALSE);
    /* gtk_window_set_type_hint (GTK_WINDOW (popup->window), GDK_WINDOW_TYPE_HINT_DIALOG); */
@@ -1039,7 +1040,7 @@ main (int argc, char *argv[])
   top.window= gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_type_hint (GTK_WINDOW(top.window), GDK_WINDOW_TYPE_HINT_DIALOG);
   gtk_window_set_decorated(GTK_WINDOW(top.window), FALSE);
-  /* gtk_window_set_resizable (GTK_WINDOW (top.window), FALSE); */
+  gtk_window_set_resizable (GTK_WINDOW (top.window), FALSE);
   gtk_window_set_skip_pager_hint (GTK_WINDOW (top.window), FALSE);
   gtk_window_set_skip_taskbar_hint(GTK_WINDOW (top.window), FALSE);
   gtk_widget_set_app_paintable(top.window, TRUE);
@@ -1075,7 +1076,7 @@ main (int argc, char *argv[])
 
   gtk_widget_realize (top.window);
   /* gtk_widget_realize (pop.window); */
-  layer_init (top.window);
+  /* layer_init (top.window); */
   gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
 
   if (opt.l)
@@ -1083,8 +1084,8 @@ main (int argc, char *argv[])
   else
       g_horizontal (&top, &pop, &opt);
 
-  layer_set_keyboard (TRUE);
-  layer_move (top.rect.x, top.rect.y);
+  /* layer_set_keyboard (TRUE); */
+  /* layer_move (top.rect.x, top.rect.y); */
   gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
 
   gtk_widget_set_can_focus (pop.flow, TRUE);
