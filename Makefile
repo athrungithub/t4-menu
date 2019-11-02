@@ -7,7 +7,7 @@ include config.mk
 SRC = t4.c desktop.c
 OBJ = $(SRC:.c=.o)
 
-all: options t4 tags
+all: options t4
 
 options:
 	@echo t4 build options:
@@ -27,7 +27,7 @@ t4: $(OBJ)
 
 tags: $(SRC)
 	@echo tags file
-	@ctags_width_dep.sh $< $(T4_CFLAGS)
+	@ctags_with_dep.sh $< $(T4_CFLAGS)
 
 clean:
 	@echo cleaning
