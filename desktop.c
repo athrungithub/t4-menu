@@ -13,14 +13,6 @@
 #define udd_print(...) g_printerr (__VA_ARGS__)
 #define udd_verbose_print(...) g_printerr (__VA_ARGS__)
 
-struct item
-{
-    char *name;
-    char *generic_name;
-    char *exec;
-    char *exec_striped;
-    gboolean terminal;
-};
 
 const gchar *lang;
 
@@ -177,6 +169,25 @@ desktop_get_exec (GList *l, const char *name)
     return (NULL); //error
 }
 
+const struct item*
+desktop_get_item (GList *l, const char *name)
+{
+    GList *tmp;
+
+    tmp = l;
+
+    while (tmp != NULL)
+    {
+        struct item *it = tmp->data;
+        if (!g_strcmp0 (it->name, name))
+        {
+            return (it);
+        }
+        tmp = tmp->next;
+    }
+    return (NULL); // error not found
+}
+
 void
 desktop_free_list (void)
 {
@@ -205,6 +216,7 @@ desktop_init_list (void)
     return;
 }
 
+#ifdef TEST
 int
 main (int argc, char **argv)
 {
@@ -227,3 +239,4 @@ main (int argc, char **argv)
 
     return 0;
 }
+#endif

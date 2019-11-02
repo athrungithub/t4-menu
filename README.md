@@ -4,11 +4,12 @@ menu system. little dmenu clone.
 ![](https://i.imgur.com/29FEPAa.png)
 
 ## Use:
-  j4-dmenu-desktop --dmenu="t4 [options]". https://github.com/enkore/j4-dmenu-desktop
+launch with lists desktop files.
+t4 [options]
 
-  ls /usr/bin | t4 [options] | /bin/sh "$@"
-
-  dmenu_path | t4 [options] | /bin/sh "$@"
+With pipes works like dmenu and print selection to stdout.
+j4-dmenu-desktop --dmenu=t4
+dmenu_path | t4 | sh
 
 ## Install:
 depend: gtk+3
@@ -25,6 +26,7 @@ sudo make install
   -l    lines.
   -f    font.
   -p    prompt string.
+  -t    terminal 
   -w    windowid X11.
   -n    no exit on lost focus.
   -v    version.
@@ -38,6 +40,8 @@ sudo make install
   --eb  entry background color.
 
 ## Keybinding items:
+  Diff with dmenu <tab> next item
+
   Next: C-n, M-l, C-Rigth, Tab, Down
 
   Previus: C-p, M-h, C-Left, Shift-Tab, Up
@@ -99,6 +103,7 @@ sudo make install
   For sway view sample config for testing, copy to $HOME/sway/config.d/
 
   Important!. Set floating_minimun_size  75 x 12 (height font)
+                  border none | border pixel 1
 
 ## Font and Color settings
   [ 〈font-style〉 || 〈font-variant〉 || 〈font-weight〉 || 〈font-stretch〉 ]? 〈font-size〉 〈font-family〉
