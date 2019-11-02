@@ -6,14 +6,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <glib.h>
 #include <glib/gprintf.h>
 #include <glib/gi18n.h>
+#include "desktop.h"
 
-#define udd_print(...) if (!quiet) g_printerr (__VA_ARGS__)
-#define udd_verbose_print(...) if (!quiet && verbose) g_printerr (__VA_ARGS__)
-
-static gboolean verbose = TRUE, quiet = FALSE;
+#define udd_print(...) g_printerr (__VA_ARGS__)
+#define udd_verbose_print(...) g_printerr (__VA_ARGS__)
 
 struct item
 {
@@ -24,7 +22,6 @@ struct item
     gboolean terminal;
 };
 
-GList *list;
 const gchar *lang;
 
 gint
@@ -60,20 +57,22 @@ get_default_search_path (void)
   return (const char **) args;
 }
 
-void
-print_desktop_dirs (const char **dirs)
-{
-  char *directories;
-
-  directories = g_strjoinv (", ", (char **) dirs);
-  udd_verbose_print(_("Search path is now: [%s]\n"), directories);
-  g_free (directories);
-}
+/*
+ * void
+ * print_desktop_dirs (const char **dirs)
+ * {
+ *   char *directories;
+ *
+ *   directories = g_strjoinv (", ", (char **) dirs);
+ *   udd_verbose_print(_("Search path is now: [%s]\n"), directories);
+ *   g_free (directories);
+ * }
+ */
 
 void
 desktop_info (gchar *file)
 {
-    GKeyFile *keyfile;
+    g_autoptr (GKeyFile) keyfile;
     struct item *it;
     int i;
 
@@ -90,6 +89,9 @@ desktop_info (gchar *file)
 
     it = g_new (struct item, 1);
 
+    it->terminal = g_key_file_get_boolean (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+            G_KEY_FILE_DESKTOP_KEY_TERMINAL, NULL);
+
     it->exec = g_key_file_get_value (keyfile, G_KEY_FILE_DESKTOP_GROUP,
             G_KEY_FILE_DESKTOP_KEY_EXEC, NULL);
 
@@ -97,17 +99,17 @@ desktop_info (gchar *file)
             G_KEY_FILE_DESKTOP_KEY_GENERIC_NAME, lang, NULL);
 
     it->name = g_key_file_get_locale_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
-            G_KEY_FILE_DESKTOP_KEY_NAME, lang, NULL) ;
+            G_KEY_FILE_DESKTOP_KEY_NAME, lang, NULL);
 
-    it->terminal = g_key_file_get_boolean (keyfile, G_KEY_FILE_DESKTOP_GROUP,
-            G_KEY_FILE_DESKTOP_KEY_TERMINAL, NULL);
+    if (!it->name)
+    {
+        g_warning ("Unable read Desktop Item Name: %s\n", file);
+    }
 
     for (i = 0; it->exec[i] != ' '; i++) {}
     it->exec_striped = g_strndup (it->exec, i);
 
-    list = g_list_insert_sorted (list, it, compare);
-
-    g_key_file_free (keyfile);
+   desktop_list= g_list_insert_sorted (desktop_list, it, compare);
 
     return ;
 }
@@ -157,7 +159,7 @@ list_item_destroy (gpointer data)
 }
 
 const char *
-get_exec (GList *l, const char *name)
+desktop_get_exec (GList *l, const char *name)
 {
     /* g_list_foreach (l, get_exec_cb, name); */
     GList *tmp;
@@ -175,26 +177,40 @@ get_exec (GList *l, const char *name)
     return (NULL); //error
 }
 
-int
-main (int argc, char **argv)
+void
+desktop_free_list (void)
 {
-    const char **dirs;
+    g_list_free_full (desktop_list, list_item_destroy);
+    return;
+}
+
+void
+desktop_init_list (void)
+{
+    const char **dire;
     int i;
 
-    list = NULL;
+   desktop_list= NULL;
 
     lang = g_getenv ("LANG");
 
-    dirs = NULL;
-    dirs = get_default_search_path ();
+    dire = NULL;
+    dire = get_default_search_path ();
     /* print_desktop_dirs (dirs); */
 
-    for (i = 0; dirs[i] != NULL; i++)
+    for (i = 0; dire[i] != NULL; i++)
     {
-        recurse_dir (dirs[i]);
+        recurse_dir (dire[i]);
     }
+    return;
+}
 
-    GList *l = list;
+int
+main (int argc, char **argv)
+{
+    desktop_init_list ();
+
+    GList *l = desktop_list;
 
     while (l != NULL)
     {
@@ -205,19 +221,9 @@ main (int argc, char **argv)
         l = next;
     }
 
-    udd_print(_("exec: %s\n"), get_exec (list, "Zathura"));
+    udd_print(_("exec: %s\n"), desktop_get_exec (desktop_list, "Zathura"));
 
-    char *d;
-    for (i; i >= 0 ; i--)
-    {
-        d = (char *) dirs[i];
-        g_free (d);
-    }
-
-    d = (char *)dirs;
-    g_free (d);
-
-    g_list_free_full (list, list_item_destroy);
+    desktop_free_list ();
 
     return 0;
 }
