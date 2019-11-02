@@ -15,6 +15,27 @@
 
 static gboolean verbose = TRUE, quiet = FALSE;
 
+struct item
+{
+    char *name;
+    char *generic_name;
+    char *exec;
+    char *exec_striped;
+    gboolean terminal;
+};
+
+GList *list;
+const gchar *lang;
+
+gint
+compare (gconstpointer a, gconstpointer b)
+{
+    const struct item *ai = a;
+    const struct item *bi = b;
+
+    return (g_strcmp0 (ai->name, bi->name));
+}
+
 static const char **
 get_default_search_path (void)
 {
@@ -50,12 +71,14 @@ print_desktop_dirs (const char **dirs)
 }
 
 void
-desktop_info (char *file)
+desktop_info (gchar *file)
 {
     GKeyFile *keyfile;
+    struct item *it;
+    int i;
 
     keyfile = g_key_file_new ();
-    g_key_file_load_from_file (keyfile, file, G_KEY_FILE_NONE, NULL);
+    g_key_file_load_from_file (keyfile, file, G_KEY_FILE_KEEP_TRANSLATIONS, NULL);
 
     /* Hidden= true means that the .desktopfile should be completely ignored */
   if (g_key_file_get_boolean (keyfile, G_KEY_FILE_DESKTOP_GROUP, G_KEY_FILE_DESKTOP_KEY_HIDDEN, NULL) ||
@@ -64,32 +87,38 @@ desktop_info (char *file)
       g_key_file_free (keyfile);
       return;
     }
-    char *executable_name = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+
+    it = g_new (struct item, 1);
+
+    it->exec = g_key_file_get_value (keyfile, G_KEY_FILE_DESKTOP_GROUP,
             G_KEY_FILE_DESKTOP_KEY_EXEC, NULL);
-    char *generic_name = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
-            G_KEY_FILE_DESKTOP_KEY_GENERIC_NAME, NULL);
-    char *name = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
-            G_KEY_FILE_DESKTOP_KEY_NAME, NULL) ;
-    printf ("%s (%s)\n", name, (generic_name != NULL)? generic_name : executable_name);
-    if (executable_name != NULL)
-        g_free (executable_name);
-    if (generic_name != NULL)
-        g_free (generic_name);
-    if (name != NULL)
-        g_free (name);
+
+    it->generic_name = g_key_file_get_locale_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+            G_KEY_FILE_DESKTOP_KEY_GENERIC_NAME, lang, NULL);
+
+    it->name = g_key_file_get_locale_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+            G_KEY_FILE_DESKTOP_KEY_NAME, lang, NULL) ;
+
+    it->terminal = g_key_file_get_boolean (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+            G_KEY_FILE_DESKTOP_KEY_TERMINAL, NULL);
+
+    for (i = 0; it->exec[i] != ' '; i++) {}
+    it->exec_striped = g_strndup (it->exec, i);
+
+    list = g_list_insert_sorted (list, it, compare);
 
     g_key_file_free (keyfile);
+
     return ;
 }
 
 static void
-recurse_dir (const char *dir)
+recurse_dir (const gchar *dir)
 {
   GDir *gdir;
   const char *filename;
 
   gdir = g_dir_open (dir, 0, NULL);
-
 
   while ((filename = g_dir_read_name (gdir)) != NULL)
   {
@@ -110,29 +139,85 @@ recurse_dir (const char *dir)
   g_dir_close (gdir);
 }
 
+void
+list_item_destroy (gpointer data)
+{
+    struct item *i = (struct item*)data;
+
+    if (i->name != NULL)
+        g_free (i->name);
+    if (i->generic_name != NULL)
+        g_free (i->generic_name);
+    if (i->exec != NULL)
+        g_free (i->exec);
+    if (i->exec_striped != NULL)
+        g_free (i->exec_striped);
+    g_free (i);
+    return;
+}
+
+const char *
+get_exec (GList *l, const char *name)
+{
+    /* g_list_foreach (l, get_exec_cb, name); */
+    GList *tmp;
+
+    tmp = l;
+    while (tmp != NULL)
+    {
+        struct item *it = tmp->data;
+        if (!g_strcmp0 (it->name, name))
+        {
+            return (it->exec);
+        }
+        tmp = tmp->next;
+    }
+    return (NULL); //error
+}
+
 int
 main (int argc, char **argv)
 {
     const char **dirs;
     int i;
 
+    list = NULL;
+
+    lang = g_getenv ("LANG");
+
     dirs = NULL;
     dirs = get_default_search_path ();
-    print_desktop_dirs (dirs);
+    /* print_desktop_dirs (dirs); */
 
     for (i = 0; dirs[i] != NULL; i++)
     {
         recurse_dir (dirs[i]);
     }
 
-    char *directories;
+    GList *l = list;
 
+    while (l != NULL)
+    {
+        GList *next = l->next;
+        struct item *it = l->data;
+        printf ("%s (%s)\n", it->name, (it->generic_name != NULL)? it->generic_name : it->exec_striped);
+
+        l = next;
+    }
+
+    udd_print(_("exec: %s\n"), get_exec (list, "Zathura"));
+
+    char *d;
     for (i; i >= 0 ; i--)
     {
-        directories = (char *) dirs[i];
-        g_free (directories);
+        d = (char *) dirs[i];
+        g_free (d);
     }
-    directories = (char *)dirs;
-    g_free (directories);
+
+    d = (char *)dirs;
+    g_free (d);
+
+    g_list_free_full (list, list_item_destroy);
+
     return 0;
 }
