@@ -5,9 +5,11 @@ menu system. little dmenu clone.
 
 ## Use:
 launch with lists desktop files.
+
 t4 [options]
 
 With pipes works like dmenu and print selection to stdout.
+
 j4-dmenu-desktop --dmenu=t4
 dmenu_path | t4 | sh
 
@@ -19,25 +21,44 @@ make
 sudo make install
 
 ## Options:
-  -b    prompt at bottom window.
-  -x    x position.
-  -y    y position.
-  -W    wide window.
-  -l    lines.
-  -f    font.
-  -p    prompt string.
-  -t    terminal 
-  -w    windowid X11.
-  -n    no exit on lost focus.
-  -v    version.
-  --nc  normal foreground color.
-  --nb  normal background color.
-  --fc  focused color.
-  --fb  focused background color.
-  --pc  prompt color.
-  --pb  prompt background color.
-  --ec  entry color.
-  --eb  entry background color.
+  -b    prompt at bottom window.
+
+  -x    x position.
+
+  -y    y position.
+
+  -W    wide window.
+
+  -l    lines.
+
+  -f    font.
+
+  -p    prompt string.
+
+  -t    terminal 
+
+  -w    windowid X11.
+
+  -n    no exit on lost focus.
+
+  -v    version.
+
+  --nc  normal foreground color.
+
+  --nb  normal background color.
+
+  --fc  focused color.
+
+  --fb  focused background color.
+
+  --pc  prompt color.
+
+  --pb  prompt background color.
+
+  --ec  entry color.
+
+  --eb  entry background color.
+
 
 ## Keybinding items:
   Diff with dmenu <tab> next item
