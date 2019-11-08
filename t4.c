@@ -641,25 +641,33 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 }
 
 void
+item_insert (struct Popup *pop, char *item)
+{
+    struct Options *opt = pop->opt;
+    GtkWidget *tmp;
+
+    tmp = gtk_label_new (item);
+    gtk_label_set_use_markup (GTK_LABEL (tmp), TRUE);
+    if (opt->l )
+    {
+        gtk_widget_set_halign (tmp, GTK_ALIGN_START);
+        gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
+    }
+    gtk_container_add (GTK_CONTAINER (pop->flow), tmp);
+    pop->count_child++;
+    return;
+}
+
+void
 read_stdin (struct Popup *popup)
 {
-  struct Options *opt = popup->opt;
   gchar buf[BUFSIZ], *p;
-  GtkWidget *tmp;
 
   while (fgets (buf, BUFSIZ, stdin) != NULL)
     {
       if ((p = strchr (buf, '\n')))
         *p = '\0';
-      tmp = gtk_label_new (buf);
-      /* gtk_label_set_ellipsize (GTK_LABEL (tmp), PANGO_ELLIPSIZE_MIDDLE); */
-      if (opt->l )
-        {
-          gtk_widget_set_halign (tmp, GTK_ALIGN_START);
-          gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
-        }
-      gtk_container_add (GTK_CONTAINER (popup->flow), tmp);
-      popup->count_child++;
+      item_insert (popup, buf);
     }
   popup->lower = 0.0;
   return;
@@ -668,8 +676,6 @@ read_stdin (struct Popup *popup)
 void
 read_desktop (struct Popup *popup)
 {
-    struct Options *opt = popup->opt;
-    GtkWidget *tmp;
     GList *l;
 
     desktop_init_list ();
@@ -685,16 +691,7 @@ read_desktop (struct Popup *popup)
         if ((p = strchr (buf, '\n')))
             *p = '\0';
 
-        /* g_message ("%s", buf); */
-        tmp = gtk_label_new (buf);
-        /* gtk_label_set_ellipsize (GTK_LABEL (tmp), PANGO_ELLIPSIZE_MIDDLE); */
-        if (opt->l )
-        {
-            gtk_widget_set_halign (tmp, GTK_ALIGN_START);
-            gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
-        }
-        gtk_container_add (GTK_CONTAINER (popup->flow), tmp);
-        popup->count_child++;
+        item_insert (popup, buf);
         g_free (buf);
         l = next;
     }
