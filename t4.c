@@ -867,7 +867,7 @@ static void
 launch (struct Popup *pop, const char *s)
 {
     char *name;
-    char *exec;
+    const char *exec = NULL;
     int i;
     GAppInfo *app_info;
     const struct item *it;
@@ -875,11 +875,36 @@ launch (struct Popup *pop, const char *s)
     for (i = 0; s[i] != '('; i++) {}
     name = g_strndup (s, --i);
 
-    /* exec = (char *)desktop_get_exec (desktop_list, name); */
     it = desktop_get_item (desktop_list, name);
-    exec = it->exec;
+    if (it && name)
+    {
+        exec = it->exec;
+    }
+    else // full command line, search exec, if exits in desktop app
+    {
+        GList *tmp;
+        tmp = desktop_list;
 
-    if (it->terminal)
+        for (i = 0; s[i] != ' '; i++) {}
+        name = g_strndup (s, i);
+
+        while (tmp != NULL)
+        {
+            struct item *ittmp = tmp->data;
+            if (g_str_has_prefix (ittmp->exec, name))
+            {
+                it = ittmp;
+                exec = s;
+                break;
+            }
+            tmp = tmp->next;
+        }
+    }
+
+    if (!exec)
+        exit (1);
+
+    if (it && it->terminal)
     {
         // search terminal
         gchar *command, *term;
@@ -891,7 +916,8 @@ launch (struct Popup *pop, const char *s)
             term = pop->opt->t;
         else if (!term)
             term = "i3-sensible-terminal";
-        command = g_strconcat (term, " -e ",  exec, NULL);
+
+        command = g_strconcat (term, " -e ", "\"", exec, "\"", NULL);
         app_info = g_app_info_create_from_commandline (command, name, G_APP_INFO_CREATE_NONE, NULL);
         g_free (command);
     }
@@ -900,12 +926,10 @@ launch (struct Popup *pop, const char *s)
         app_info = g_app_info_create_from_commandline (exec, name, G_APP_INFO_CREATE_NONE, NULL);
     }
 
-    /* if (!app_info) */
-        /* g_message ("no app_info"); */
-
     g_app_info_launch (app_info, NULL, NULL, NULL);
 
     desktop_free_list ();
+    g_free (name);
     gtk_main_quit ();
 }
 
