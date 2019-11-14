@@ -340,6 +340,7 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
 }
 /* }}}1 */
 
+/* Vertical {{{2 */
 void
 g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
 {
@@ -583,6 +584,7 @@ vertical_scroll (struct Popup *popup, enum scroll sc)
       gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
     }
 }
+/* }}}2 */
 
 static gboolean
 parse_opt (int *argc, char ***argv, struct Options *opt)
