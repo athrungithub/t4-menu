@@ -1,41 +1,39 @@
 # start t4 (a program launcher)
 floating_minimum_size 75 x 12
-default_floating_border pixel 1
-for_window [app_id="top"] floating enable, move position 0px 0px
+for_window [app_id="top"] border none, move position 0px 0px
 
-# This use j4-dmenu-desktop. https://github.com/enkore/j4-dmenu-desktop
-bindsym $mod+d exec j4-dmenu-desktop --display-binary --dmenu="t4 --name="top""
+bindsym $mod+d exec t4
 
 # examples
 set $TLL TopLeftList
 set $BLL BottomLeftList
-set $TRL TopRigthList
+set $TRL TopRightList
 set $BRL BottomRightList
 set $TML TopMiddleList
 set $BML BottomMiddleList
 set $BWL BottomWideList
 set $BH  BottomHorizontal
 
-# examples for monitor Widht=1920 Height=1080
-for_window [app_id="$TLL"] floating enable, move position 0px 0px
-for_window [app_id="$BLL"] floating enable, move position 0px 1056px
-for_window [app_id="$TRL"] floating enable, move position 1620px 0px
-for_window [app_id="$BRL"] floating enable, move position 1620px 1056px
-for_window [app_id="$TML"] floating enable, move position 810px 0px
-for_window [app_id="$BML"] floating enable, move position 810px 1056px
-for_window [app_id="$BWL"] floating enable, move position 0px 1056px
-for_window [app_id="$BH"] floating enable, move position 0px 1056px
+# for monitor Widht=1920 Height=1080
+for_window [app_id="$TLL"]  move position 0px 0px
+for_window [app_id="$BLL"]  move position 0px 1056px
+for_window [app_id="$TRL"]  move position 1620px 0px
+for_window [app_id="$BRL"]  move position 1620px 1056px
+for_window [app_id="$TML"]  move position 810px 0px
+for_window [app_id="$BML"]  move position 810px 1056px
+for_window [app_id="$BWL"]  move position 0px 1056px
+for_window [app_id="$BH" ]  move position 0px 1056px
 
 set $t4 Menu (1)$TLL (2)BLL (3)$TRL (4)$BRL (5)$TML (6)$BML (7)$BWL (8)$BH
 mode "$t4" {
-    bindsym 1 exec dmenu_path | t4 -n -W 300 -l 20 --name=$TLL, mode "default"
-    bindsym 2 exec dmenu_path | t4 -n -W 300 -l 20 -b --name=$BLL ,mode "default"
-    bindsym 3 exec dmenu_path | t4 -n -W 300 -l 20 --name=$TRL ,mode "default"
-    bindsym 4 exec dmenu_path | t4 -n -W 300 -l 20 -b --name=$BRL ,mode "default"
-    bindsym 5 exec dmenu_path | t4 -n -W 300 -l 20 --name=$TML ,mode "default"
-    bindsym 6 exec dmenu_path | t4 -n -W 300 -l 20 -b --name=$BML, mode "default"
-    bindsym 7 exec dmenu_path | t4 -n -W 2000 -l 20 -b --name=$BWL, mode "default"
-    bindsym 8 exec dmenu_path | t4 -n --name=$BH ,mode "default"
+    bindsym 1 exec t4 -n -W 300 -l 20 --name=$TLL, mode "default"
+    bindsym 2 exec t4 -n -W 300 -l 20 -b --name=$BLL ,mode "default"
+    bindsym 3 exec t4 -n -W 300 -l 20 --name=$TRL ,mode "default"
+    bindsym 4 exec t4 -n -W 300 -l 20 -b --name=$BRL ,mode "default"
+    bindsym 5 exec t4 -n -W 300 -l 20 --name=$TML ,mode "default"
+    bindsym 6 exec t4 -n -W 300 -l 20 -b --name=$BML, mode "default"
+    bindsym 7 exec t4 -n -W 2000 -l 20 -b --name=$BWL, mode "default"
+    bindsym 8 exec t4 -n --name=$BH ,mode "default"
 
     bindsym Escape mode "default"
 }

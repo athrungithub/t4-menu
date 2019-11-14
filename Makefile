@@ -1,10 +1,10 @@
-# t4 - simple dmenu
+# t4 - simple dmenu clone
 #
 .POSIX:
 
 include config.mk
 
-SRC = t4.c
+SRC = t4.c desktop.c
 OBJ = $(SRC:.c=.o)
 
 all: options t4
@@ -24,6 +24,10 @@ $(OBJ): config.mk
 t4: $(OBJ)
 	@echo CC -o $@
 	@$(CC) $(T4_CFLAGS) -o $@ $(OBJ) $(T4_LDFLAGS)
+
+tags: $(SRC)
+	@echo tags file
+	@ctags_with_dep.sh $< $(T4_CFLAGS)
 
 clean:
 	@echo cleaning

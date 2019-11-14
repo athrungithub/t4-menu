@@ -1,9 +1,12 @@
 #include <stdlib.h>
 #include <glib/gprintf.h>
 #include <string.h>
+#include <unistd.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
+
 #include "layer.h"
+#include "desktop.h"
 
 #define PROMPT "Launch : "
 #define COMPLETION_TIMEOUT 100
@@ -28,6 +31,7 @@ struct Options
   gboolean b; // bottom
   char *p;    // prompt
   char *f;    // font
+  char *t;    // terminal
   char *co;   // foreground color
   char *bc;   // normal background color
   char *fc;   // focused color
@@ -85,6 +89,8 @@ enum scroll {
     FIRST,
     END,
 };
+
+gboolean DESKTOP;
 
 static gboolean draw(GtkWidget *widget, cairo_t *cr, gpointer userdata)
 {
@@ -336,6 +342,7 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
 }
 /* }}}1 */
 
+/* Vertical {{{2 */
 void
 vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
 {
@@ -579,6 +586,7 @@ vertical_scroll (struct Popup *popup, enum scroll sc)
       gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
     }
 }
+/* }}}2 */
 
 static gboolean
 parse_opt (int *argc, char ***argv, struct Options *opt)
@@ -595,6 +603,7 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 { "bottom", 'b', 0, G_OPTION_ARG_NONE, &(opt->b), "<strint> prompt at bottom window", NULL},
 { "font", 'f', 0, G_OPTION_ARG_STRING, &(opt->f), "<string>. \"10px Sans\"", NULL},
 { "prompt", 'p', 0, G_OPTION_ARG_STRING, &(opt->p), "<string> prompt", NULL},
+{ "terminal", 't', 0, G_OPTION_ARG_STRING, &(opt->t), "terminal", NULL},
 { "windowid", 'w', 0, G_OPTION_ARG_STRING, &(opt->w), "<x11 winid>. embed windowid.", NULL},
 { "focus", 'n', 0, G_OPTION_ARG_NONE, &(opt->n), "no quit on lost focus", NULL},
 { "version", 'v', 0, G_OPTION_ARG_NONE, &(opt->v), "version", NULL},
@@ -623,7 +632,7 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 
   if (!g_option_context_parse (context, argc, argv, &error))
     {
-      g_print ("option parsing failed: %s\n", error->message);
+      g_printf ("option parsing failed: %s\n", error->message);
     }
   if (opt->v)
     {
@@ -636,28 +645,77 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 }
 
 void
-read_input (struct Popup *popup)
+item_insert (struct Popup *pop, char *item)
 {
-  struct Options *opt = popup->opt;
-  guint count = 0;
-  gchar buf[BUFSIZ], *p;
-  GtkWidget *tmp;
+    struct Options *opt = pop->opt;
+    GtkWidget *tmp;
 
-  for (; fgets (buf, BUFSIZ, stdin); count ++)
+    tmp = gtk_label_new (item);
+    gtk_label_set_use_markup (GTK_LABEL (tmp), TRUE);
+    if (opt->l )
+    {
+        gtk_widget_set_halign (tmp, GTK_ALIGN_START);
+        gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
+    }
+    gtk_container_add (GTK_CONTAINER (pop->flow), tmp);
+    pop->count_child++;
+    return;
+}
+
+void
+read_stdin (struct Popup *popup)
+{
+  gchar buf[BUFSIZ], *p;
+
+  while (fgets (buf, BUFSIZ, stdin) != NULL)
     {
       if ((p = strchr (buf, '\n')))
         *p = '\0';
-      tmp = gtk_label_new (buf);
-      /* gtk_label_set_ellipsize (GTK_LABEL (tmp), PANGO_ELLIPSIZE_MIDDLE); */
-      if (opt->l )
-        {
-          gtk_widget_set_halign (tmp, GTK_ALIGN_START);
-          gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
-        }
-      gtk_container_add (GTK_CONTAINER (popup->flow), tmp);
-      popup->count_child++;
+      item_insert (popup, buf);
     }
   popup->lower = 0.0;
+  return;
+}
+
+void
+read_desktop (struct Popup *popup)
+{
+    GList *l;
+
+    desktop_init_list ();
+    l = desktop_list;
+
+    while (l != NULL)
+    {
+        char *buf, *p;
+        GList *next = l->next;
+        struct item *it = l->data;
+        buf = g_strdup_printf ("%s (%s)\n", it->name, (it->generic_name != NULL) ?
+                it->generic_name : it->exec_striped);
+        if ((p = strchr (buf, '\n')))
+            *p = '\0';
+
+        item_insert (popup, buf);
+        g_free (buf);
+        l = next;
+    }
+    popup->lower = 0.0;
+    return;
+}
+
+void
+read_input (struct Popup *popup)
+{
+    if (isatty (fileno (stdin)))
+    {
+        /* g_printerr ("stdin is connected to a terminal\n"); */
+        DESKTOP = TRUE;
+        read_desktop (popup);
+    }
+    else
+    {
+        read_stdin (popup);
+    }
   return;
 }
 
@@ -709,12 +767,12 @@ set_style (struct Top *top, struct Options *opt)
 
   gtk_css_provider_load_from_data (provider, str->str, -1, NULL);
 
-screen = gtk_window_get_screen (GTK_WINDOW (top->window));
-gtk_style_context_add_provider_for_screen (screen, GTK_STYLE_PROVIDER (provider),
-                                           GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+  screen = gtk_window_get_screen (GTK_WINDOW (top->window));
+  gtk_style_context_add_provider_for_screen (screen, GTK_STYLE_PROVIDER (provider),
+          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-g_string_free (str, TRUE);
-return;
+  g_string_free (str, TRUE);
+  return;
 }
 
 gboolean
@@ -812,6 +870,76 @@ completion (struct Popup *popup, struct Options *opt)
 }
 
 static void
+launch (struct Popup *pop, const char *s)
+{
+    char *name;
+    const char *exec = NULL;
+    int i;
+    GAppInfo *app_info;
+    const struct item *it;
+
+    for (i = 0; s[i] != '('; i++) {}
+    name = g_strndup (s, --i);
+
+    it = desktop_get_item (desktop_list, name);
+    if (it && name)
+    {
+        exec = it->exec;
+    }
+    else // full command line, search exec, if exits in desktop app
+    {
+        GList *tmp;
+        tmp = desktop_list;
+
+        for (i = 0; s[i] != ' '; i++) {}
+        name = g_strndup (s, i);
+
+        while (tmp != NULL)
+        {
+            struct item *ittmp = tmp->data;
+            if (g_str_has_prefix (ittmp->exec, name))
+            {
+                it = ittmp;
+                exec = s;
+                break;
+            }
+            tmp = tmp->next;
+        }
+    }
+
+    if (!exec)
+        exit (1);
+
+    if (it && it->terminal)
+    {
+        // search terminal
+        gchar *command, *term;
+
+        term = NULL;
+        term = getenv ("TERMINAL");
+
+        if (pop->opt->t)
+            term = pop->opt->t;
+        else if (!term)
+            term = "i3-sensible-terminal";
+
+        command = g_strconcat (term, " -e ", "\"", exec, "\"", NULL);
+        app_info = g_app_info_create_from_commandline (command, name, G_APP_INFO_CREATE_NONE, NULL);
+        g_free (command);
+    }
+    else
+    {
+        app_info = g_app_info_create_from_commandline (exec, name, G_APP_INFO_CREATE_NONE, NULL);
+    }
+
+    g_app_info_launch (app_info, NULL, NULL, NULL);
+
+    desktop_free_list ();
+    g_free (name);
+    gtk_main_quit ();
+}
+
+static void
 output (struct Popup *pop, gboolean quit)
 {
   struct Top *top = pop->top;
@@ -829,7 +957,14 @@ output (struct Popup *pop, gboolean quit)
     {
       st = gtk_entry_get_text (GTK_ENTRY (top->entry));
     }
-  g_print ("%s\n", st);
+  if (DESKTOP)
+  {
+      launch (pop, st);
+  }
+  else
+  {
+      g_printf ("%s\n", st);
+  }
   if (quit)
     gtk_main_quit();
   else
@@ -1033,6 +1168,8 @@ main (int argc, char *argv[])
   pop.monitor = &mon;
   pop.opt = &opt;
   pop.top = &top;
+
+  DESKTOP = FALSE;
 
   gtk_init (&argc, &argv);
   parse_opt (&argc, &argv, &opt);
