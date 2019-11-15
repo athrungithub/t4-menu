@@ -1,4 +1,3 @@
-#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 /* #include "xdg-shell-client-protocol.h" */
 #include <wayland-client.h>
 #include <gtk/gtk.h>
@@ -10,7 +9,6 @@ static struct wl_display *wldisplay;
 static struct zwlr_layer_shell_v1* shell;
 static struct wl_registry *registry;
 static struct  wl_surface *wl_surface;
-static struct zwlr_layer_surface_v1 *surface;
 
 static void nop() {}
 
@@ -39,9 +37,10 @@ struct wl_registry_listener listener = {
     .global_remove = nop
 };
 
-void
+struct zwlr_layer_surface_v1 *
 layer_init (GtkWidget *win)
 {
+    struct zwlr_layer_surface_v1 *surface;
 
     disp = gdk_display_get_default ();
     wldisplay = gdk_wayland_display_get_wl_display (disp);
@@ -57,25 +56,25 @@ layer_init (GtkWidget *win)
 
     wl_surface_commit (wl_surface);
     wl_display_roundtrip (wldisplay);
-    return;
+    return (surface);
 }
 
 void
-layer_move (int x, int y)
+layer_move (struct zwlr_layer_surface_v1 *surf, int x, int y)
 {
-    zwlr_layer_surface_v1_set_anchor(surface, ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
+    zwlr_layer_surface_v1_set_anchor(surf, ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
             ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT);
-    zwlr_layer_surface_v1_set_margin(surface, y, 0, 0, x);
+    zwlr_layer_surface_v1_set_margin(surf, y, 0, 0, x);
     return;
 }
 
-void layer_set_keyboard (gboolean opt)
+void layer_set_keyboard (struct zwlr_layer_surface_v1 *surf, gboolean opt)
 {
-    zwlr_layer_surface_v1_set_keyboard_interactivity (surface, opt);
+    zwlr_layer_surface_v1_set_keyboard_interactivity (surf, opt);
     return;
 }
 
-#ifdef GTK
+#ifdef TEST
 gboolean
 key_press_event_cb (GtkWidget *w, GdkEvent *event, gpointer data)
 {
@@ -106,6 +105,7 @@ int
 main (int argc, char *argv[])
 {
     GtkWidget *window;
+    struct zwlr_layer_surface_v1 *surface;
 
     int width = 920, height = 22, x = 1000, y = 100;
 
@@ -125,9 +125,9 @@ main (int argc, char *argv[])
     gtk_window_set_resizable (GTK_WINDOW(n), FALSE);
     gtk_window_set_transient_for (GTK_WINDOW(n), GTK_WINDOW(window));
     gtk_widget_realize (window);
-    layer_init (window);
-    layer_set_keyboard (TRUE);
-    layer_move (x, y);
+    surface = layer_init (window);
+    layer_set_keyboard (surface, TRUE);
+    layer_move (surface, x, y);
     gtk_widget_show_all (window);
     gtk_widget_show (n);
     gtk_window_resize (GTK_WINDOW(window), width, height);

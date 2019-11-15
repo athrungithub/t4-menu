@@ -53,6 +53,7 @@ struct Top
   GtkWidget *entry;
   GtkWidget *prompt;
   GdkRectangle rect;
+  struct zwlr_layer_surface_v1 *surf;
   struct Monitor *monitor;
 };
 
@@ -68,6 +69,7 @@ struct Popup
   GdkRectangle rect;  // tamaño del popup
   GtkAdjustment *adj;
   gdouble lower;      // adjusment value
+  struct zwlr_layer_surface_v1 *surf;
   struct Monitor *monitor;
   struct Top *top;
   struct Options *opt;
@@ -78,6 +80,7 @@ struct Monitor
   GdkMonitor *mon;
   GdkRectangle area;
   gboolean wayland_backend;
+  gboolean swaysock;
 };
 
 enum scroll {
@@ -117,7 +120,7 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
 }
 
 static void
-monitor_set (struct Top *top, struct Options *opt)
+monitor_set (struct Top *top, struct Popup *pop, struct Options *opt)
 {
   /*TODO: set monitor */
   GtkWidget *w = top->window;
@@ -146,17 +149,31 @@ monitor_set (struct Top *top, struct Options *opt)
   t = gdk_display_get_name (display);
   top->monitor->wayland_backend = !strncmp (t, "wayland", strlen("wayland"));
 
+
   return;
 }
 
 /* Horizontal {{{1 */
+void
+horizontal_popup_resize (struct Top *top,struct Popup *popup, struct Options *opt)
+{
+    int width;
+
+    gtk_widget_get_preferred_width (GTK_WIDGET (popup->flow), &width, NULL);
+
+    int temp = MIN (popup->rect.width, width);
+    gtk_widget_set_size_request (popup->window, temp, -1);
+
+    return;
+}
+
 void
 g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
 {
   GtkRequisition req;
   gtk_widget_show_all (top->window);
   gtk_widget_show_all (pop->window);
-  monitor_set (top, opt);
+  monitor_set (top, pop, opt);
 
   gtk_label_set_ellipsize (GTK_LABEL (top->prompt), PANGO_ELLIPSIZE_END);
   gtk_widget_get_preferred_size (top->window, &req, NULL);
@@ -235,10 +252,17 @@ g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
     }
 
   gtk_widget_set_size_request (top->window, top->rect.width, -1);
-  gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
-
   gtk_widget_set_size_request (pop->window, pop->rect.width, -1);
-  gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
+
+  if (pop->monitor->wayland_backend && pop->monitor->swaysock)
+  {
+      layer_move (pop->surf, pop->rect.x, pop->rect.y);
+  }
+  else
+  {
+      gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
+      gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
+  }
 
   return;
 }
@@ -342,7 +366,7 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
 }
 /* }}}1 */
 
-/* Vertical {{{2 */
+/* Vertical {{{1 */
 void
 vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
 {
@@ -374,8 +398,8 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
       if (popup->rect.height > top->rect.y)
         popup->rect.height = top->rect.y;
       popup->rect.y = top->rect.y - popup->rect.height <= 0 ? 0 : top->rect.y - popup->rect.height;
-      if (top->monitor->wayland_backend)
-        popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height);
+      /* if (top->monitor->wayland_backend) */
+        /* popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height); */
     }
   else
     {
@@ -387,11 +411,17 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
 
 
   gtk_widget_set_size_request (popup->window, popup->rect.width, popup->rect.height);
+
   if (top->monitor->wayland_backend)
     {
-      gtk_widget_hide (popup->window);
-      gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
-      gtk_widget_show (popup->window);
+      if (top->monitor->swaysock)
+      {
+          layer_move (popup->surf, popup->rect.x, popup->rect.y);
+      }
+      else
+      {
+          gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
+      }
     }
   else  // X11
     {
@@ -402,7 +432,6 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
          gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
                     GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
       gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
-      gtk_widget_show (popup->window);
     }
 
   return;
@@ -413,7 +442,7 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
 {
   GtkRequisition req;
   gtk_widget_show_all (top->window);
-  monitor_set (top, opt);
+  monitor_set (top, pop, opt);
 
   gtk_label_set_ellipsize (GTK_LABEL (top->prompt), PANGO_ELLIPSIZE_END);
   gtk_widget_get_preferred_size (top->window, &req, NULL);
@@ -586,7 +615,7 @@ vertical_scroll (struct Popup *popup, enum scroll sc)
       gtk_flow_box_set_vadjustment (GTK_FLOW_BOX (popup->flow), popup->adj);
     }
 }
-/* }}}2 */
+/* }}}1 */
 
 static gboolean
 parse_opt (int *argc, char ***argv, struct Options *opt)
@@ -846,14 +875,11 @@ completion (struct Popup *popup, struct Options *opt)
   gtk_widget_show (popup->flow);
   gtk_widget_show (popup->scrolled);
 
-  /* pack it all */
-  popup->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+  popup->window = gtk_window_new (GTK_WINDOW_POPUP);
   gtk_widget_set_name (popup->window, "popup");
   gtk_window_set_resizable (GTK_WINDOW (popup->window), FALSE);
-  gtk_window_set_decorated(GTK_WINDOW(popup->window), FALSE);
   gtk_window_set_accept_focus (GTK_WINDOW (popup->window), FALSE);
   gtk_window_set_skip_pager_hint (GTK_WINDOW (popup->window), FALSE);
-   /* gtk_window_set_type_hint (GTK_WINDOW (popup->window), GDK_WINDOW_TYPE_HINT_DIALOG); */
   GtkWidget *overlay;
   overlay = gtk_overlay_new ();
 
@@ -1127,17 +1153,20 @@ changed_cb (GtkWidget *entry, gpointer data)
 
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
-  gtk_widget_hide (popup->window);
-
   if (popup->count_child)
     {
       if (opt->l)
       {
           vertical_popup_resize (top, popup, opt);
       }
-      gtk_widget_show_all (popup->window);
+      else
+      {
+          horizontal_popup_resize (top, popup, opt);
+      }
       g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
     }
+  gtk_widget_show_all (popup->window);
+
   return;
 }
 
@@ -1211,17 +1240,29 @@ main (int argc, char *argv[])
 
   read_input (&pop);
 
-  gtk_widget_realize (top.window);
-  layer_init (top.window);
-  gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
+  if (getenv ("SWAYSOCK") && !getenv ("WESTON_CONFIG_FILE"))
+  {
+      mon.swaysock = TRUE;
+      gtk_widget_realize (top.window);
+      top.surf = layer_init (top.window);
+      gtk_widget_realize (pop.window);
+      pop.surf = layer_init (pop.window);
+  }
+  else
+  {
+      gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
+  }
 
   if (opt.l)
       g_vertical (&top, &pop, &opt);
   else
       g_horizontal (&top, &pop, &opt);
 
-  layer_set_keyboard (TRUE);
-  layer_move (top.rect.x, top.rect.y);
+  if (mon.swaysock)
+  {
+      layer_set_keyboard (top.surf, TRUE);
+      layer_move (top.surf, top.rect.x, top.rect.y);
+  }
   gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
 
   gtk_widget_set_can_focus (pop.flow, TRUE);

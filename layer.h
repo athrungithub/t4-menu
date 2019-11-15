@@ -3,10 +3,10 @@
 
 #include <gtk/gtk.h>
 
-// struct zwlr_layer_surface_v1 *surface;
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 
-void layer_init (GtkWidget *win);
-void layer_move (int x, int y);
-void layer_set_keyboard (gboolean);
+struct zwlr_layer_surface_v1 *layer_init (GtkWidget *win);
+void layer_move (struct zwlr_layer_surface_v1 *surf, int x, int y);
+void layer_set_keyboard (struct zwlr_layer_surface_v1 *surf, gboolean);
 
 #endif
