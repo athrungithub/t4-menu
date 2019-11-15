@@ -2,6 +2,7 @@
 #include <wayland-client.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkwayland.h>
+/* #include "wlr-layer-shell-unstable-v1-client-protocol.h" */
 #include "layer.h"
 
 static GdkDisplay *disp;
@@ -53,6 +54,7 @@ layer_init (GtkWidget *win)
     surface = zwlr_layer_shell_v1_get_layer_surface (shell, wl_surface, NULL,
             ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, "t4");
     zwlr_layer_surface_v1_add_listener (surface, &surface_listener, NULL);
+    zwlr_layer_surface_v1_set_exclusive_zone (surface, -1);
 
     wl_surface_commit (wl_surface);
     wl_display_roundtrip (wldisplay);

@@ -1233,10 +1233,10 @@ main (int argc, char *argv[])
   set_style (&top, &opt);
 
   /* close popup window on lost focus */
-  /* g_signal_connect (G_OBJECT(top.entry), "focus-out-event", */
-                    /* G_CALLBACK(focus_out_event_cb), &pop); */
-  /* g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event", */
-                           /* G_CALLBACK(gtk_widget_show_all),pop.window); */
+  g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
+                    G_CALLBACK(focus_out_event_cb), &pop);
+  g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event",
+                           G_CALLBACK(gtk_widget_show_all),pop.window);
 
   read_input (&pop);
 

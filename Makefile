@@ -1,13 +1,39 @@
 # t4 - simple dmenu clone
 #
 .POSIX:
+WAYLAND_PROTOCOLS=$(shell pkg-config --variable=pkgdatadir wayland-protocols)
+WAYLAND_SCANNER=$(shell pkg-config --variable=wayland_scanner wayland-scanner)
 
 include config.mk
 
-SRC = t4.c desktop.c
+SRC = t4.c \
+      wlr-layer-shell-unstable-v1-client-protocol.c \
+      xdg-shell.c layer.c desktop.c
+
 OBJ = $(SRC:.c=.o)
 
-all: options t4
+all: options protocol t4
+
+wlr-layer-shell-unstable-v1-client-protocol.c: xdg-shell.c
+	$(WAYLAND_SCANNER) private-code \
+	wlr-layer-shell-unstable-v1.xml $@
+
+wlr-layer-shell-unstable-v1-client-protocol.h: xdg-shell.h
+	$(WAYLAND_SCANNER) client-header \
+	  wlr-layer-shell-unstable-v1.xml $@
+
+xdg-shell.c:
+	$(WAYLAND_SCANNER) private-code \
+        $(WAYLAND_PROTOCOLS)/stable/xdg-shell/xdg-shell.xml $@
+
+xdg-shell.h:
+	$(WAYLAND_SCANNER) client-header \
+        $(WAYLAND_PROTOCOLS)/stable/xdg-shell/xdg-shell.xml $@
+
+protocol: wlr-layer-shell-unstable-v1-client-protocol.h \
+    wlr-layer-shell-unstable-v1-client-protocol.c \
+    xdg-shell.h \
+    xdg-shell.c
 
 options:
 	@echo t4 build options:
@@ -31,7 +57,11 @@ tags: $(SRC)
 
 clean:
 	@echo cleaning
-	@rm -f $(NAME) $(OBJ)
+	@rm -f $(NAME) $(OBJ) \
+	    wlr-layer-shell-unstable-v1-client-protocol.c \
+	    wlr-layer-shell-unstable-v1-client-protocol.h \
+	    xdg-shell.c xdg-shell.h
+
 
 install: all
 	@echo installing executable file to $(DESTDIR)$(PREFIX)/bin

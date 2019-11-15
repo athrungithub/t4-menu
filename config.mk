@@ -14,10 +14,17 @@ DATAPREFIX = $(PREFIX)/share
 
 CFLAGS  += -g -Wall
 LDFLAGS ?= -Wall
-CFLAGS  += $(shell pkg-config --cflags gtk+-3.0)
-LDFLAGS += $(shell pkg-config --libs gtk+-3.0)
-CFLAGS  += $(shell pkg-config --cflags gdk-3.0)
-LDFLAGS += $(shell pkg-config --libs gdk-3.0)
+CFLAGS  += $(shell pkg-config --cflags gtk+-3.0) \
+	$(shell pkg-config --cflags gdk-3.0) \
+	$(shell pkg-config --cflags wayland-client) \
+	$(shell pkg-config --cflags gdk-wayland-3.0) \
+	$(shell pkg-config --cflags wlroots)
+
+LDFLAGS += $(shell pkg-config --libs gtk+-3.0) \
+	$(shell pkg-config --libs gdk-3.0) \
+	$(shell pkg-config --libs wayland-client) \
+	$(shell pkg-config --libs gdk-wayland-3.0) \
+	$(shell pkg-config --libs wlroots)
 
 # flags
 CPPFLAGS = -DVERSION=\"${VERSION}\" -DNAME=\"${NAME}\" \
