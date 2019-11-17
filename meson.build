@@ -54,9 +54,9 @@ if (wlroots.found() and wayland_client_dep.found() and wayland_protos.found() an
                   command: [wayland_scanner, 'private-code', '@INPUT@', '@OUTPUT@'],
           )
           wl_protos_headers += custom_target(
-                  xml.underscorify() + '_client_h',
+                  xml.underscorify(),
                   input: xml,
-                  output: '@BASENAME@-protocol.h',
+                  output: '@BASENAME@-client-protocol.h',
                   command: [wayland_scanner, 'client-header', '@INPUT@', '@OUTPUT@'],
           )
   endforeach
