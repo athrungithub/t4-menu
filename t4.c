@@ -5,8 +5,11 @@
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
 
-#include "layer.h"
 #include "desktop.h"
+
+#ifdef LAYER
+#include "layer.h"
+#endif
 
 #define PROMPT "Launch : "
 #define COMPLETION_TIMEOUT 100
@@ -256,7 +259,9 @@ g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
 
   if (pop->monitor->wayland_backend && pop->monitor->swaysock)
   {
+#ifdef LAYER
       layer_move (pop->surf, pop->rect.x, pop->rect.y);
+#endif
   }
   else
   {
@@ -416,7 +421,9 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
     {
       if (top->monitor->swaysock)
       {
+#ifdef LAYER
           layer_move (popup->surf, popup->rect.x, popup->rect.y);
+#endif
       }
       else
       {
@@ -665,7 +672,7 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
     }
   if (opt->v)
     {
-      /* fprintf (stdout, "version: %s\nbuild date: %s\n", VERSION,  BUILDDATE); */
+      fprintf (stdout, "version: %s\nbuild date: %s\n", VERSION,  BUILDDATE);
       exit (EXIT_SUCCESS);
     }
 
@@ -1233,6 +1240,8 @@ main (int argc, char *argv[])
   set_style (&top, &opt);
 
   /* close popup window on lost focus */
+  gtk_widget_set_events (top.entry, GDK_FOCUS_CHANGE_MASK);
+
   g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
                     G_CALLBACK(focus_out_event_cb), &pop);
   g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event",
@@ -1244,12 +1253,15 @@ main (int argc, char *argv[])
   {
       mon.swaysock = TRUE;
       gtk_widget_realize (top.window);
-      top.surf = layer_init (top.window);
       gtk_widget_realize (pop.window);
+#ifdef LAYER
+      top.surf = layer_init (top.window);
       pop.surf = layer_init (pop.window);
+#endif
   }
   else
   {
+      mon.swaysock = FALSE;
       gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
   }
 
@@ -1260,8 +1272,10 @@ main (int argc, char *argv[])
 
   if (mon.swaysock)
   {
+#ifdef LAYER
       layer_set_keyboard (top.surf, TRUE);
       layer_move (top.surf, top.rect.x, top.rect.y);
+#endif
   }
   gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
 

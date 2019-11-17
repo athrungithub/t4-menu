@@ -1,8 +1,6 @@
-/* #include "xdg-shell-client-protocol.h" */
 #include <wayland-client.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkwayland.h>
-/* #include "wlr-layer-shell-unstable-v1-client-protocol.h" */
 #include "layer.h"
 
 static GdkDisplay *disp;
