@@ -1171,8 +1171,13 @@ changed_cb (GtkWidget *entry, gpointer data)
           horizontal_popup_resize (top, popup, opt);
       }
       g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
+      gtk_widget_show_all (popup->window);
     }
-  gtk_widget_show_all (popup->window);
+  else
+  {
+      if (!popup->monitor->wayland_backend)
+          gtk_widget_hide (popup->window);
+  }
 
   return;
 }

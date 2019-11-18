@@ -1,5 +1,5 @@
 # t4-menu
-menu system. little dmenu clone.
+dmenu clone.
 
 ![](https://i.imgur.com/29FEPAa.png)
 
@@ -11,14 +11,36 @@ t4 [options]
 With pipes works like dmenu and print selection to stdout.
 
 j4-dmenu-desktop --dmenu=t4
+
 dmenu_path | t4 | sh
+
+ls /usr/bin | t4
 
 ## Install:
 depend: gtk+3
 
+optional: (for sway, wlr-layer-shell)
+    wlroots
+
+    wayland-clients
+
+compile:
+    meson
+
+    ninja
+    optional for sway wlr-layer-shell
+
+    wayland-protocols
+
+    wayland-scanner
+
 git clone https://github.com/athrungithub/t4-menu
-make
-sudo make install
+
+meson build
+
+ninja -C build
+
+sudo ninja -C build install
 
 ## Options:
   -b    prompt at bottom window.
@@ -35,7 +57,7 @@ sudo make install
 
   -p    prompt string.
 
-  -t    terminal 
+  -t    terminal
 
   -w    windowid X11.
 
