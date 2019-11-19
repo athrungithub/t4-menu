@@ -14,7 +14,7 @@ done
 
 [[ ${rgb_file:?rgb.txt not found} ]]
 
-select=$(sed -n 's/^[0-9 \t]*\([a-zA-Z0-9 ].*$\)/<span foreground="\1">██ <\/span>\1/p' ${rgb_file} | t4 -l 40 | cut -d ' ' -f 2-)
+select=$(sed -n 's/^[0-9 \t]*\([a-zA-Z0-9 ].*$\)/<span foreground="\1">██ <\/span>\1/p' ${rgb_file} | t4 -n -l 40 | cut -d ' ' -f 2-)
 
 if [[ -z ${select} ]]; then
     exit 1

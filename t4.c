@@ -4,12 +4,7 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 #include <gtk/gtkx.h>     /* for gtk_plug */
-
 #include "desktop.h"
-
-#ifdef LAYER
-#include "layer.h"
-#endif
 
 #define PROMPT "Launch : "
 #define COMPLETION_TIMEOUT 100
@@ -56,7 +51,6 @@ struct Top
   GtkWidget *entry;
   GtkWidget *prompt;
   GdkRectangle rect;
-  struct zwlr_layer_surface_v1 *surf;
   struct Monitor *monitor;
 };
 
@@ -72,7 +66,6 @@ struct Popup
   GdkRectangle rect;  // tamaño del popup
   GtkAdjustment *adj;
   gdouble lower;      // adjusment value
-  struct zwlr_layer_surface_v1 *surf;
   struct Monitor *monitor;
   struct Top *top;
   struct Options *opt;
@@ -83,7 +76,6 @@ struct Monitor
   GdkMonitor *mon;
   GdkRectangle area;
   gboolean wayland_backend;
-  gboolean swaysock;
 };
 
 enum scroll {
@@ -123,7 +115,7 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
 }
 
 static void
-monitor_set (struct Top *top, struct Popup *pop, struct Options *opt)
+monitor_set (struct Top *top, struct Options *opt)
 {
   /*TODO: set monitor */
   GtkWidget *w = top->window;
@@ -152,31 +144,17 @@ monitor_set (struct Top *top, struct Popup *pop, struct Options *opt)
   t = gdk_display_get_name (display);
   top->monitor->wayland_backend = !strncmp (t, "wayland", strlen("wayland"));
 
-
   return;
 }
 
 /* Horizontal {{{1 */
-void
-horizontal_popup_resize (struct Top *top,struct Popup *popup, struct Options *opt)
-{
-    int width;
-
-    gtk_widget_get_preferred_width (GTK_WIDGET (popup->flow), &width, NULL);
-
-    int temp = MIN (popup->rect.width, width);
-    gtk_widget_set_size_request (popup->window, temp, -1);
-
-    return;
-}
-
 void
 g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
 {
   GtkRequisition req;
   gtk_widget_show_all (top->window);
   gtk_widget_show_all (pop->window);
-  monitor_set (top, pop, opt);
+  monitor_set (top, opt);
 
   gtk_label_set_ellipsize (GTK_LABEL (top->prompt), PANGO_ELLIPSIZE_END);
   gtk_widget_get_preferred_size (top->window, &req, NULL);
@@ -255,19 +233,10 @@ g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
     }
 
   gtk_widget_set_size_request (top->window, top->rect.width, -1);
-  gtk_widget_set_size_request (pop->window, pop->rect.width, -1);
+  gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
 
-  if (pop->monitor->wayland_backend && pop->monitor->swaysock)
-  {
-#ifdef LAYER
-      layer_move (pop->surf, pop->rect.x, pop->rect.y);
-#endif
-  }
-  else
-  {
-      gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
-      gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
-  }
+  gtk_widget_set_size_request (pop->window, pop->rect.width, -1);
+  gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
 
   return;
 }
@@ -373,7 +342,7 @@ horizontal_scroll (struct Popup * popup, enum scroll sc)
 
 /* Vertical {{{1 */
 void
-vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
+g_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt)
 {
   GList *list;
   gint child_height, tmp, tmp_lim;
@@ -403,8 +372,8 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
       if (popup->rect.height > top->rect.y)
         popup->rect.height = top->rect.y;
       popup->rect.y = top->rect.y - popup->rect.height <= 0 ? 0 : top->rect.y - popup->rect.height;
-      /* if (top->monitor->wayland_backend) */
-        /* popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height); */
+      if (top->monitor->wayland_backend)
+        popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height);
     }
   else
     {
@@ -414,31 +383,24 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
       popup->rect.y = top->rect.y + top->rect.height;
     }
 
+  if (popup->count_child < 3)
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
+                                    GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+  else
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
+                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 
   gtk_widget_set_size_request (popup->window, popup->rect.width, popup->rect.height);
-
   if (top->monitor->wayland_backend)
     {
-      if (top->monitor->swaysock)
-      {
-#ifdef LAYER
-          layer_move (popup->surf, popup->rect.x, popup->rect.y);
-#endif
-      }
-      else
-      {
-          gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
-      }
-    }
-  else  // X11
-    {
-     if (popup->count_child < 3)
-         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
-                 GTK_POLICY_NEVER, GTK_POLICY_NEVER);
-     else
-         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
-                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+      gtk_widget_hide (popup->window);
       gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
+      gtk_widget_show (popup->window);
+    }
+  else
+    {
+      gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
+      gtk_widget_show (popup->window);
     }
 
   return;
@@ -449,7 +411,7 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
 {
   GtkRequisition req;
   gtk_widget_show_all (top->window);
-  monitor_set (top, pop, opt);
+  monitor_set (top, opt);
 
   gtk_label_set_ellipsize (GTK_LABEL (top->prompt), PANGO_ELLIPSIZE_END);
   gtk_widget_get_preferred_size (top->window, &req, NULL);
@@ -516,7 +478,7 @@ g_vertical (struct Top *top, struct Popup *pop, struct Options *opt)
   gtk_widget_set_size_request (top->window, top->rect.width, -1);
   gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
 
-  vertical_popup_resize (top, pop, opt);
+  g_popup_resize (top, pop, opt);
 
   return;
 }
@@ -882,6 +844,7 @@ completion (struct Popup *popup, struct Options *opt)
   gtk_widget_show (popup->flow);
   gtk_widget_show (popup->scrolled);
 
+  /* pack it all */
   popup->window = gtk_window_new (GTK_WINDOW_POPUP);
   gtk_widget_set_name (popup->window, "popup");
   gtk_window_set_resizable (GTK_WINDOW (popup->window), FALSE);
@@ -910,34 +873,22 @@ launch (struct Popup *pop, const char *s)
     int i;
     GAppInfo *app_info;
     const struct item *it;
+    GList *tmp;
+    tmp = desktop_list;
 
-    for (i = 0; s[i] != '('; i++) {}
-    name = g_strndup (s, --i);
+    for (i = 0; s[i] != ' '; i++) {}
+    name = g_strndup (s, i);
 
-    it = desktop_get_item (desktop_list, name);
-    if (it && name)
+    while (tmp != NULL)
     {
-        exec = it->exec;
-    }
-    else // full command line, search exec, if exits in desktop app
-    {
-        GList *tmp;
-        tmp = desktop_list;
-
-        for (i = 0; s[i] != ' '; i++) {}
-        name = g_strndup (s, i);
-
-        while (tmp != NULL)
+        struct item *ittmp = tmp->data;
+        if (g_str_has_prefix (ittmp->exec, name))
         {
-            struct item *ittmp = tmp->data;
-            if (g_str_has_prefix (ittmp->exec, name))
-            {
-                it = ittmp;
-                exec = s;
-                break;
-            }
-            tmp = tmp->next;
+            it = ittmp;
+            exec = s;
+            break;
         }
+        tmp = tmp->next;
     }
 
     if (!exec)
@@ -1160,25 +1111,27 @@ changed_cb (GtkWidget *entry, gpointer data)
 
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
-  if (popup->count_child)
-    {
-      if (opt->l)
-      {
-          vertical_popup_resize (top, popup, opt);
-      }
-      else
-      {
-          horizontal_popup_resize (top, popup, opt);
-      }
-      g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
-      gtk_widget_show_all (popup->window);
-    }
+  if (opt->l )
+  {
+      g_popup_resize (top, popup, opt);
+  }
   else
   {
-      if (!popup->monitor->wayland_backend)
-          gtk_widget_hide (popup->window);
+      gtk_widget_hide (popup->window);
+      gtk_widget_show_all (popup->window);
   }
 
+  if (popup->count_child)
+    {
+      gtk_widget_show_all (popup->window);
+      g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
+    }
+  else
+    {
+      gtk_widget_hide (popup->window);
+    }
+
+  g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, TRUE, &b);
   return;
 }
 
@@ -1245,8 +1198,6 @@ main (int argc, char *argv[])
   set_style (&top, &opt);
 
   /* close popup window on lost focus */
-  gtk_widget_set_events (top.entry, GDK_FOCUS_CHANGE_MASK);
-
   g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
                     G_CALLBACK(focus_out_event_cb), &pop);
   g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event",
@@ -1254,36 +1205,12 @@ main (int argc, char *argv[])
 
   read_input (&pop);
 
-  if (getenv ("SWAYSOCK") && !getenv ("WESTON_CONFIG_FILE"))
-  {
-      mon.swaysock = TRUE;
-      gtk_widget_realize (top.window);
-      gtk_widget_realize (pop.window);
-#ifdef LAYER
-      top.surf = layer_init (top.window);
-      pop.surf = layer_init (pop.window);
-#endif
-  }
-  else
-  {
-      mon.swaysock = FALSE;
-      gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
-  }
+  gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
 
   if (opt.l)
       g_vertical (&top, &pop, &opt);
   else
       g_horizontal (&top, &pop, &opt);
-
-  if (mon.swaysock)
-  {
-#ifdef LAYER
-      layer_set_keyboard (top.surf, TRUE);
-      layer_move (top.surf, top.rect.x, top.rect.y);
-#endif
-  }
-  gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
-
   gtk_widget_set_can_focus (pop.flow, TRUE);
 
   gtk_main ();

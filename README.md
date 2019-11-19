@@ -19,21 +19,6 @@ ls /usr/bin | t4
 ## Install:
 depend: gtk+3
 
-optional: (for sway, wlr-layer-shell)
-    wlroots
-
-    wayland-clients
-
-compile:
-    meson
-
-    ninja
-    optional for sway wlr-layer-shell
-
-    wayland-protocols
-
-    wayland-scanner
-
 git clone https://github.com/athrungithub/t4-menu
 
 meson build

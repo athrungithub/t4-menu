@@ -2,7 +2,7 @@
 # `cat /gtk+-3/gtk/emoji/emoji.json | jq '.[]| .char + " " + .name' |sed 's/\(&\)/&amp;/;  s/"//g'`
 # font: ttf-twemoji
 
-emoji=$(t4 -l 40 <<End-of-message
+emoji=$(t4 -n -l 40 <<End-of-message
 😀 grinning face
 😁 beaming face with smiling eyes
 😂 face with tears of joy

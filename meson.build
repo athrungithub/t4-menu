@@ -5,10 +5,6 @@ project(
   )
 
 gtk = dependency('gtk+-3.0')
-wlroots = dependency('wlroots', required: false)
-wayland_client_dep = dependency('wayland-client', required: false)
-wayland_protos = dependency('wayland-protocols', required: false)
-wayland_scanner_dep = dependency('wayland-scanner', required: false, native: true)
 
 src_files = [
   't4.c',
@@ -30,9 +26,6 @@ executable(
   files(src_files),
   dependencies: [
     gtk,
-    wlroots,
-    wayland_client_dep,
-    wayland_protos,
     ],
   install: true,
   )
