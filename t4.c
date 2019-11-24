@@ -873,26 +873,40 @@ launch (struct Popup *pop, const char *s)
     int i;
     GAppInfo *app_info;
     const struct item *it;
-    GList *tmp;
-    tmp = desktop_list;
+    gboolean command_line;
 
-    for (i = 0; s[i] != ' '; i++) {}
-    name = g_strndup (s, i);
+    for (i = 0; s[i] != '('; i++) {}
+    name = g_strndup (s, --i);
 
-    while (tmp != NULL)
+    it = desktop_get_item (desktop_list, name);
+    if (it && name)
     {
-        struct item *ittmp = tmp->data;
-        if (g_str_has_prefix (ittmp->exec, name))
-        {
-            it = ittmp;
-            exec = s;
-            break;
-        }
-        tmp = tmp->next;
+        exec = it->exec;
     }
+    else // full command line, search exec, if exits in desktop app
+    {
+        GList *tmp;
+        tmp = desktop_list;
 
-    if (!exec)
-        exit (1);
+        for (i = 0; s[i] != ' '; i++) {}
+        name = g_strndup (s, i);
+
+        while (tmp != NULL)
+        {
+            struct item *ittmp = tmp->data;
+            if (g_str_has_prefix (ittmp->exec, name))
+            {
+                it = ittmp;
+                exec = s;
+                break;
+            }
+            tmp = tmp->next;
+        }
+        if (!exec)
+            exit (1);
+        else
+            command_line = TRUE;
+    }
 
     if (it && it->terminal)
     {
@@ -913,7 +927,8 @@ launch (struct Popup *pop, const char *s)
     }
     else
     {
-        app_info = g_app_info_create_from_commandline (exec, name, G_APP_INFO_CREATE_NONE, NULL);
+        app_info = g_app_info_create_from_commandline (command_line ? exec : name,
+               NULL, G_APP_INFO_CREATE_NONE, NULL);
     }
 
     g_app_info_launch (app_info, NULL, NULL, NULL);
