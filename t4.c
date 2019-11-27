@@ -387,12 +387,6 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
 
   gtk_widget_get_preferred_height (GTK_WIDGET (list->data), NULL, &child_height);
 
-  if (!popup->count_child)
-    {
-      gtk_widget_hide (popup->window);
-      return;
-    }
-
   tmp= popup->count_child * child_height;
 
   tmp_lim = opt->l * top->rect.height;
@@ -1160,18 +1154,15 @@ changed_cb (GtkWidget *entry, gpointer data)
 
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
+  if (opt->l )
+      vertical_popup_resize (top, popup, opt);
+  else
+      horizontal_popup_resize (top, popup, opt);
+
   if (popup->count_child)
     {
-      if (opt->l)
-      {
-          vertical_popup_resize (top, popup, opt);
-      }
-      else
-      {
-          horizontal_popup_resize (top, popup, opt);
-      }
-      g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
       gtk_widget_show_all (popup->window);
+      g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
     }
   else
   {
@@ -1179,6 +1170,7 @@ changed_cb (GtkWidget *entry, gpointer data)
           gtk_widget_hide (popup->window);
   }
 
+  g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
   return;
 }
 
