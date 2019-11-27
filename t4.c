@@ -87,13 +87,13 @@ struct Monitor
 };
 
 enum scroll {
-    POS,
-    PREVIOUS,
-    NEXT,
-    PAGENEXT,
-    PAGEPREVIOUS,
-    FIRST,
-    END,
+  POS,
+  PREVIOUS,
+  NEXT,
+  PAGENEXT,
+  PAGEPREVIOUS,
+  FIRST,
+  END,
 };
 
 gboolean DESKTOP;
@@ -113,11 +113,11 @@ static void screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer us
   GdkVisual *visual = gdk_screen_get_rgba_visual(screen);
 
   if (!gdk_screen_is_composited (screen))
-      /* printf("Your screen does not support alpha channels!\n"); */
-      visual = gdk_screen_get_system_visual(screen);
+    /* printf("Your screen does not support alpha channels!\n"); */
+    visual = gdk_screen_get_system_visual(screen);
   else
-      /* printf("Your screen supports alpha channels!\n"); */
-      g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
+    /* printf("Your screen supports alpha channels!\n"); */
+    g_signal_connect (G_OBJECT (widget), "draw", G_CALLBACK (draw), NULL);
 
   gtk_widget_set_visual(widget, visual);
 }
@@ -160,14 +160,14 @@ monitor_set (struct Top *top, struct Popup *pop, struct Options *opt)
 void
 horizontal_popup_resize (struct Top *top,struct Popup *popup, struct Options *opt)
 {
-    int width;
+  int width;
 
-    gtk_widget_get_preferred_width (GTK_WIDGET (popup->flow), &width, NULL);
+  gtk_widget_get_preferred_width (GTK_WIDGET (popup->flow), &width, NULL);
 
-    int temp = MIN (popup->rect.width, width);
-    gtk_widget_set_size_request (popup->window, temp, -1);
+  int temp = MIN (popup->rect.width, width);
+  gtk_widget_set_size_request (popup->window, temp, -1);
 
-    return;
+  return;
 }
 
 void
@@ -258,16 +258,16 @@ g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
   gtk_widget_set_size_request (pop->window, pop->rect.width, -1);
 
   if (pop->monitor->wayland_backend && pop->monitor->swaysock)
-  {
+    {
 #ifdef LAYER
       layer_move (pop->surf, pop->rect.x, pop->rect.y);
 #endif
-  }
+    }
   else
-  {
+    {
       gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
       gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
-  }
+    }
 
   return;
 }
@@ -398,7 +398,7 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
         popup->rect.height = top->rect.y;
       popup->rect.y = top->rect.y - popup->rect.height <= 0 ? 0 : top->rect.y - popup->rect.height;
       /* if (top->monitor->wayland_backend) */
-        /* popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height); */
+      /* popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height); */
     }
   else
     {
@@ -414,24 +414,24 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
   if (top->monitor->wayland_backend)
     {
       if (top->monitor->swaysock)
-      {
+        {
 #ifdef LAYER
           layer_move (popup->surf, popup->rect.x, popup->rect.y);
 #endif
-      }
+        }
       else
-      {
+        {
           gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
-      }
+        }
     }
   else  // X11
     {
-     if (popup->count_child < 3)
-         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
-                 GTK_POLICY_NEVER, GTK_POLICY_NEVER);
-     else
-         gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
-                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+      if (popup->count_child < 3)
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
+                                        GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+      else
+        gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (popup->scrolled),
+                                        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
       gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
     }
 
@@ -625,40 +625,40 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
   GOptionContext *context;
 
   GOptionEntry entries[] =
-{
-{ "xposition", 'x', 0, G_OPTION_ARG_INT, &(opt->x), "<int> pixels", NULL},
-{ "yposition:", 'y', 0, G_OPTION_ARG_INT, &(opt->y),"<int> pixels", NULL},
-{ "width", 'W', 0, G_OPTION_ARG_INT, &(opt->W), "<int> pixels", NULL},
-{ "lines", 'l', 0, G_OPTION_ARG_INT, &(opt->l), "<int>, vertical mode", NULL},
-{ "bottom", 'b', 0, G_OPTION_ARG_NONE, &(opt->b), "<strint> prompt at bottom window", NULL},
-{ "font", 'f', 0, G_OPTION_ARG_STRING, &(opt->f), "<string>. \"10px Sans\"", NULL},
-{ "prompt", 'p', 0, G_OPTION_ARG_STRING, &(opt->p), "<string> prompt", NULL},
-{ "terminal", 't', 0, G_OPTION_ARG_STRING, &(opt->t), "terminal", NULL},
-{ "windowid", 'w', 0, G_OPTION_ARG_STRING, &(opt->w), "<x11 winid>. embed windowid.", NULL},
-{ "focus", 'n', 0, G_OPTION_ARG_NONE, &(opt->n), "no quit on lost focus", NULL},
-{ "version", 'v', 0, G_OPTION_ARG_NONE, &(opt->v), "version", NULL},
-{ "nc", 0, 0, G_OPTION_ARG_STRING, &(opt->co), "normal foreground color", NULL},
-{ "nb", 0, 0, G_OPTION_ARG_STRING, &(opt->bc), "normal background color", NULL},
-{ "fc", 0, 0, G_OPTION_ARG_STRING, &(opt->fc), "focused color", NULL},
-{ "fb", 0, 0, G_OPTION_ARG_STRING, &(opt->fb), "focused background color", NULL},
-{ "pc", 0, 0, G_OPTION_ARG_STRING, &(opt->pc), "prompt color", NULL},
-{ "pb", 0, 0, G_OPTION_ARG_STRING, &(opt->pb), "prompt background color", NULL},
-{ "ec", 0, 0, G_OPTION_ARG_STRING, &(opt->ec), "entry color", NULL},
-{ "eb", 0, 0, G_OPTION_ARG_STRING, &(opt->eb), "entry background color", NULL},
-{ NULL }
-};
+    {
+       { "xposition", 'x', 0, G_OPTION_ARG_INT, &(opt->x), "<int> pixels", NULL},
+       { "yposition:", 'y', 0, G_OPTION_ARG_INT, &(opt->y),"<int> pixels", NULL},
+       { "width", 'W', 0, G_OPTION_ARG_INT, &(opt->W), "<int> pixels", NULL},
+       { "lines", 'l', 0, G_OPTION_ARG_INT, &(opt->l), "<int>, vertical mode", NULL},
+       { "bottom", 'b', 0, G_OPTION_ARG_NONE, &(opt->b), "<strint> prompt at bottom window", NULL},
+       { "font", 'f', 0, G_OPTION_ARG_STRING, &(opt->f), "<string>. \"10px Sans\"", NULL},
+       { "prompt", 'p', 0, G_OPTION_ARG_STRING, &(opt->p), "<string> prompt", NULL},
+       { "terminal", 't', 0, G_OPTION_ARG_STRING, &(opt->t), "terminal", NULL},
+       { "windowid", 'w', 0, G_OPTION_ARG_STRING, &(opt->w), "<x11 winid>. embed windowid.", NULL},
+       { "focus", 'n', 0, G_OPTION_ARG_NONE, &(opt->n), "no quit on lost focus", NULL},
+       { "version", 'v', 0, G_OPTION_ARG_NONE, &(opt->v), "version", NULL},
+       { "nc", 0, 0, G_OPTION_ARG_STRING, &(opt->co), "normal foreground color", NULL},
+       { "nb", 0, 0, G_OPTION_ARG_STRING, &(opt->bc), "normal background color", NULL},
+       { "fc", 0, 0, G_OPTION_ARG_STRING, &(opt->fc), "focused color", NULL},
+       { "fb", 0, 0, G_OPTION_ARG_STRING, &(opt->fb), "focused background color", NULL},
+       { "pc", 0, 0, G_OPTION_ARG_STRING, &(opt->pc), "prompt color", NULL},
+       { "pb", 0, 0, G_OPTION_ARG_STRING, &(opt->pb), "prompt background color", NULL},
+       { "ec", 0, 0, G_OPTION_ARG_STRING, &(opt->ec), "entry color", NULL},
+       { "eb", 0, 0, G_OPTION_ARG_STRING, &(opt->eb), "entry background color", NULL},
+       { NULL }
+    };
 
   context = g_option_context_new (NULL);
   g_option_context_add_main_entries (context, entries, NULL);
   g_option_context_set_ignore_unknown_options (context, TRUE);
   g_option_context_set_description (context,
-"Color format:\n"
-"\t rgba(rr,gg,bb,aa), rgb(rr,gg,bb), #rrggbb, color name.\n"
-"Font format:\n"
-"\t[style][variant][weight][strech] font-size font-family\n"
-"Geometry:\n"
-"\t x, y, W, l > monitor size, can be used"
-"\t ");
+                                    "Color format:\n"
+                                    "\t rgba(rr,gg,bb,aa), rgb(rr,gg,bb), #rrggbb, color name.\n"
+                                    "Font format:\n"
+                                    "\t[style][variant][weight][strech] font-size font-family\n"
+                                    "Geometry:\n"
+                                    "\t x, y, W, l > monitor size, can be used"
+                                    "\t ");
 
   if (!g_option_context_parse (context, argc, argv, &error))
     {
@@ -677,19 +677,19 @@ parse_opt (int *argc, char ***argv, struct Options *opt)
 void
 item_insert (struct Popup *pop, char *item)
 {
-    struct Options *opt = pop->opt;
-    GtkWidget *tmp;
+  struct Options *opt = pop->opt;
+  GtkWidget *tmp;
 
-    tmp = gtk_label_new (item);
-    gtk_label_set_use_markup (GTK_LABEL (tmp), TRUE);
-    if (opt->l )
+  tmp = gtk_label_new (item);
+  gtk_label_set_use_markup (GTK_LABEL (tmp), TRUE);
+  if (opt->l )
     {
-        gtk_widget_set_halign (tmp, GTK_ALIGN_START);
-        gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
+      gtk_widget_set_halign (tmp, GTK_ALIGN_START);
+      gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
     }
-    gtk_container_add (GTK_CONTAINER (pop->flow), tmp);
-    pop->count_child++;
-    return;
+  gtk_container_add (GTK_CONTAINER (pop->flow), tmp);
+  pop->count_child++;
+  return;
 }
 
 void
@@ -710,41 +710,41 @@ read_stdin (struct Popup *popup)
 void
 read_desktop (struct Popup *popup)
 {
-    GList *l;
+  GList *l;
 
-    desktop_init_list ();
-    l = desktop_list;
+  desktop_init_list ();
+  l = desktop_list;
 
-    while (l != NULL)
+  while (l != NULL)
     {
-        char *buf, *p;
-        GList *next = l->next;
-        struct item *it = l->data;
-        buf = g_strdup_printf ("%s (%s)\n", it->name, (it->generic_name != NULL) ?
-                it->generic_name : it->exec_striped);
-        if ((p = strchr (buf, '\n')))
-            *p = '\0';
+      char *buf, *p;
+      GList *next = l->next;
+      struct item *it = l->data;
+      buf = g_strdup_printf ("%s (%s)\n", it->name, (it->generic_name != NULL) ?
+                             it->generic_name : it->exec_striped);
+      if ((p = strchr (buf, '\n')))
+        *p = '\0';
 
-        item_insert (popup, buf);
-        g_free (buf);
-        l = next;
+      item_insert (popup, buf);
+      g_free (buf);
+      l = next;
     }
-    popup->lower = 0.0;
-    return;
+  popup->lower = 0.0;
+  return;
 }
 
 void
 read_input (struct Popup *popup)
 {
-    if (isatty (fileno (stdin)))
+  if (isatty (fileno (stdin)))
     {
-        /* g_printerr ("stdin is connected to a terminal\n"); */
-        DESKTOP = TRUE;
-        read_desktop (popup);
+      /* g_printerr ("stdin is connected to a terminal\n"); */
+      DESKTOP = TRUE;
+      read_desktop (popup);
     }
-    else
+  else
     {
-        read_stdin (popup);
+      read_stdin (popup);
     }
   return;
 }
@@ -758,48 +758,48 @@ set_style (struct Top *top, struct Options *opt)
   GString *str = g_string_new(NULL);
 
   g_string_printf (str,
-  " @binding-set gtk-emacs-text-entry "
-  " { "
-  "   bind '<ctrl>b' { 'move-cursor' (logical-positions, -1, 0) }; "
-  "   bind '<shift><ctrl>b' { 'move-cursor' (logical-positions, -1, 1) }; "
-  "   bind '<ctrl>f' { 'move-cursor' (logical-positions, 1, 0) }; "
-  "   bind '<shift><ctrl>f' { 'move-cursor' (logical-positions, 1, 1) }; "
-  "   bind '<alt>b' { 'move-cursor' (words, -1, 0) }; "
-  "   bind '<shift><alt>b' { 'move-cursor' (words, -1, 1) }; "
-  "   bind '<alt>f' { 'move-cursor' (words, 1, 0) }; "
-  "   bind '<shift><alt>f' { 'move-cursor' (words, 1, 1) }; "
-  "   bind '<ctrl>a' { 'move-cursor' (paragraph-ends, -1, 0) }; "
-  "   bind '<shift><ctrl>a' { 'move-cursor' (paragraph-ends, -1, 1) }; "
-  "   bind '<ctrl>e' { 'move-cursor' (paragraph-ends, 1, 0) }; "
-  "   bind '<shift><ctrl>e' { 'move-cursor' (paragraph-ends, 1, 1) }; "
-  "   bind '<ctrl>y' { 'paste-clipboard' () }; "
-  "   bind '<ctrl>d' { 'delete-from-cursor' (chars, 1) }; "
-  "   bind '<alt>d' { 'delete-from-cursor' (word-ends, 1) }; "
-  "   bind '<ctrl>k' { 'delete-from-cursor' (paragraph-ends, 1) }; "
-  "   bind '<alt>backslash' { 'delete-from-cursor' (whitespace, 1) }; "
-  "   bind '<ctrl>u' { 'move-cursor' (paragraph-ends, -1, 0) "
-  "                    'delete-from-cursor' (paragraph-ends, 1) }; "
-  "   bind '<ctrl>h' { 'delete-from-cursor' (chars, -1) }; "
-  "   bind '<ctrl>w' { 'delete-from-cursor' (word-ends, -1) }; "
-  " } "
-  " entry {-gtk-key-bindings: gtk-emacs-text-entry;}"
-  " flowbox label {margin: 0px 3px; }"
-  " label, entry, flowbox * {font: %s; margin:0px; padding:0px;min-height:12px; border-radius:0px; background-image:none;border:0px;}"
-  " scrollbar.horizontal *, slider* {min-height:0px;border:0px; margin:0px; padding:0px; border-radius:0px;}"
-  " flowboxchild:not(:selected) label, flowbox {color: %s; background-color: %s;}"
-  " flowboxchild:selected {color: %s; background-color: %s; }"
-  " #prompt {color: %s; background-color: %s;}"
-  " entry {padding-left:2px; color: %s; background-color: %s;}"
-  , opt->f? opt->f: FONT, opt->co ? opt->co : CO,\
-  opt->bc ? opt->bc : BC, opt->fc ? opt->fc : FC, opt->fb ? opt->fb : FB,\
-  opt->pc ? opt->pc : PC, opt->pb ? opt->pb : PB,\
-  opt->ec ? opt->ec : EC, opt->eb ? opt->eb : EB);
+                   " @binding-set gtk-emacs-text-entry "
+                   " { "
+                   "   bind '<ctrl>b' { 'move-cursor' (logical-positions, -1, 0) }; "
+                   "   bind '<shift><ctrl>b' { 'move-cursor' (logical-positions, -1, 1) }; "
+                   "   bind '<ctrl>f' { 'move-cursor' (logical-positions, 1, 0) }; "
+                   "   bind '<shift><ctrl>f' { 'move-cursor' (logical-positions, 1, 1) }; "
+                   "   bind '<alt>b' { 'move-cursor' (words, -1, 0) }; "
+                   "   bind '<shift><alt>b' { 'move-cursor' (words, -1, 1) }; "
+                   "   bind '<alt>f' { 'move-cursor' (words, 1, 0) }; "
+                   "   bind '<shift><alt>f' { 'move-cursor' (words, 1, 1) }; "
+                   "   bind '<ctrl>a' { 'move-cursor' (paragraph-ends, -1, 0) }; "
+                   "   bind '<shift><ctrl>a' { 'move-cursor' (paragraph-ends, -1, 1) }; "
+                   "   bind '<ctrl>e' { 'move-cursor' (paragraph-ends, 1, 0) }; "
+                   "   bind '<shift><ctrl>e' { 'move-cursor' (paragraph-ends, 1, 1) }; "
+                   "   bind '<ctrl>y' { 'paste-clipboard' () }; "
+                   "   bind '<ctrl>d' { 'delete-from-cursor' (chars, 1) }; "
+                   "   bind '<alt>d' { 'delete-from-cursor' (word-ends, 1) }; "
+                   "   bind '<ctrl>k' { 'delete-from-cursor' (paragraph-ends, 1) }; "
+                   "   bind '<alt>backslash' { 'delete-from-cursor' (whitespace, 1) }; "
+                   "   bind '<ctrl>u' { 'move-cursor' (paragraph-ends, -1, 0) "
+                   "                    'delete-from-cursor' (paragraph-ends, 1) }; "
+                   "   bind '<ctrl>h' { 'delete-from-cursor' (chars, -1) }; "
+                   "   bind '<ctrl>w' { 'delete-from-cursor' (word-ends, -1) }; "
+                   " } "
+                   " entry {-gtk-key-bindings: gtk-emacs-text-entry;}"
+                   " flowbox label {margin: 0px 3px; }"
+                   " label, entry, flowbox * {font: %s; margin:0px; padding:0px;min-height:12px; border-radius:0px; background-image:none;border:0px;}"
+                   " scrollbar.horizontal *, slider* {min-height:0px;border:0px; margin:0px; padding:0px; border-radius:0px;}"
+                   " flowboxchild:not(:selected) label, flowbox {color: %s; background-color: %s;}"
+                   " flowboxchild:selected {color: %s; background-color: %s; }"
+                   " #prompt {color: %s; background-color: %s;}"
+                   " entry {padding-left:2px; color: %s; background-color: %s;}"
+                   , opt->f? opt->f: FONT, opt->co ? opt->co : CO,\
+                   opt->bc ? opt->bc : BC, opt->fc ? opt->fc : FC, opt->fb ? opt->fb : FB,\
+                   opt->pc ? opt->pc : PC, opt->pb ? opt->pb : PB,\
+                   opt->ec ? opt->ec : EC, opt->eb ? opt->eb : EB);
 
   gtk_css_provider_load_from_data (provider, str->str, -1, NULL);
 
   screen = gtk_window_get_screen (GTK_WINDOW (top->window));
   gtk_style_context_add_provider_for_screen (screen, GTK_STYLE_PROVIDER (provider),
-          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
   g_string_free (str, TRUE);
   return;
@@ -899,71 +899,71 @@ completion (struct Popup *popup, struct Options *opt)
 static void
 launch (struct Popup *pop, const char *s)
 {
-    char *name;
-    const char *exec = NULL;
-    int i;
-    GAppInfo *app_info;
-    const struct item *it;
+  char *name;
+  const char *exec = NULL;
+  int i;
+  GAppInfo *app_info;
+  const struct item *it;
 
-    for (i = 0; s[i] != '('; i++) {}
-    name = g_strndup (s, --i);
+  for (i = 0; s[i] != '('; i++) {}
+  name = g_strndup (s, --i);
 
-    it = desktop_get_item (desktop_list, name);
-    if (it && name)
+  it = desktop_get_item (desktop_list, name);
+  if (it && name)
     {
-        exec = it->exec;
+      exec = it->exec;
     }
-    else // full command line, search exec, if exits in desktop app
+  else // full command line, search exec, if exits in desktop app
     {
-        GList *tmp;
-        tmp = desktop_list;
+      GList *tmp;
+      tmp = desktop_list;
 
-        for (i = 0; s[i] != ' '; i++) {}
-        name = g_strndup (s, i);
+      for (i = 0; s[i] != ' '; i++) {}
+      name = g_strndup (s, i);
 
-        while (tmp != NULL)
+      while (tmp != NULL)
         {
-            struct item *ittmp = tmp->data;
-            if (g_str_has_prefix (ittmp->exec, name))
+          struct item *ittmp = tmp->data;
+          if (g_str_has_prefix (ittmp->exec, name))
             {
-                it = ittmp;
-                exec = s;
-                break;
+              it = ittmp;
+              exec = s;
+              break;
             }
-            tmp = tmp->next;
+          tmp = tmp->next;
         }
     }
 
-    if (!exec)
-        exit (1);
+  if (!exec)
+    exit (1);
 
-    if (it && it->terminal)
+  if (it && it->terminal)
     {
-        // search terminal
-        gchar *command, *term;
+      // search terminal
+      gchar *command, *term;
 
-        term = NULL;
-        term = getenv ("TERMINAL");
+      term = NULL;
+      term = getenv ("TERMINAL");
 
-        if (pop->opt->t)
-            term = pop->opt->t;
-        else if (!term)
-            term = "i3-sensible-terminal";
+      if (pop->opt->t)
+        term = pop->opt->t;
+      else if (!term)
+        term = "i3-sensible-terminal";
 
-        command = g_strconcat (term, " -e ", "\"", exec, "\"", NULL);
-        app_info = g_app_info_create_from_commandline (command, name, G_APP_INFO_CREATE_NONE, NULL);
-        g_free (command);
+      command = g_strconcat (term, " -e ", "\"", exec, "\"", NULL);
+      app_info = g_app_info_create_from_commandline (command, name, G_APP_INFO_CREATE_NONE, NULL);
+      g_free (command);
     }
-    else
+  else
     {
-        app_info = g_app_info_create_from_commandline (exec, name, G_APP_INFO_CREATE_NONE, NULL);
+      app_info = g_app_info_create_from_commandline (exec, name, G_APP_INFO_CREATE_NONE, NULL);
     }
 
-    g_app_info_launch (app_info, NULL, NULL, NULL);
+  g_app_info_launch (app_info, NULL, NULL, NULL);
 
-    desktop_free_list ();
-    g_free (name);
-    gtk_main_quit ();
+  desktop_free_list ();
+  g_free (name);
+  gtk_main_quit ();
 }
 
 static void
@@ -985,13 +985,13 @@ output (struct Popup *pop, gboolean quit)
       st = gtk_entry_get_text (GTK_ENTRY (top->entry));
     }
   if (DESKTOP)
-  {
+    {
       launch (pop, st);
-  }
+    }
   else
-  {
+    {
       g_printf ("%s\n", st);
-  }
+    }
   if (quit)
     gtk_main_quit();
   else
@@ -1155,9 +1155,9 @@ changed_cb (GtkWidget *entry, gpointer data)
   gtk_flow_box_invalidate_filter (GTK_FLOW_BOX (popup->flow));
 
   if (opt->l )
-      vertical_popup_resize (top, popup, opt);
+    vertical_popup_resize (top, popup, opt);
   else
-      horizontal_popup_resize (top, popup, opt);
+    horizontal_popup_resize (top, popup, opt);
 
   if (popup->count_child)
     {
@@ -1165,10 +1165,10 @@ changed_cb (GtkWidget *entry, gpointer data)
       g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
     }
   else
-  {
+    {
       if (!popup->monitor->wayland_backend)
-          gtk_widget_hide (popup->window);
-  }
+        gtk_widget_hide (popup->window);
+    }
 
   g_signal_emit_by_name (popup->scrolled, "scroll-child", GTK_SCROLL_START, (opt->l )? FALSE: TRUE, &b);
   return;
@@ -1242,12 +1242,12 @@ main (int argc, char *argv[])
   g_signal_connect (G_OBJECT(top.entry), "focus-out-event",
                     G_CALLBACK(focus_out_event_cb), &pop);
   g_signal_connect_swapped (G_OBJECT(top.entry), "focus-in-event",
-                           G_CALLBACK(gtk_widget_show_all),pop.window);
+                            G_CALLBACK(gtk_widget_show_all),pop.window);
 
   read_input (&pop);
 
   if (getenv ("SWAYSOCK") && !getenv ("WESTON_CONFIG_FILE"))
-  {
+    {
       mon.swaysock = TRUE;
       gtk_widget_realize (top.window);
       gtk_widget_realize (pop.window);
@@ -1255,25 +1255,25 @@ main (int argc, char *argv[])
       top.surf = layer_init (top.window);
       pop.surf = layer_init (pop.window);
 #endif
-  }
+    }
   else
-  {
+    {
       mon.swaysock = FALSE;
       gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
-  }
+    }
 
   if (opt.l)
-      g_vertical (&top, &pop, &opt);
+    g_vertical (&top, &pop, &opt);
   else
-      g_horizontal (&top, &pop, &opt);
+    g_horizontal (&top, &pop, &opt);
 
   if (mon.swaysock)
-  {
+    {
 #ifdef LAYER
       layer_set_keyboard (top.surf, TRUE);
       layer_move (top.surf, top.rect.x, top.rect.y);
 #endif
-  }
+    }
   gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
 
   gtk_widget_set_can_focus (pop.flow, TRUE);
