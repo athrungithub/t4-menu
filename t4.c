@@ -687,7 +687,7 @@ item_insert (struct Popup *pop, char *item)
       gtk_widget_set_halign (tmp, GTK_ALIGN_START);
       gtk_label_set_ellipsize (GTK_LABEL(tmp), PANGO_ELLIPSIZE_END);
     }
-  gtk_container_add (GTK_CONTAINER (pop->flow), tmp);
+  gtk_flow_box_insert(GTK_FLOW_BOX(pop->flow), tmp, -1);
   pop->count_child++;
   return;
 }
