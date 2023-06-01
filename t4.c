@@ -1,3 +1,5 @@
+#define _GNU_SOURCE /* asprintf */
+
 #include <stdlib.h>
 #include <glib/gprintf.h>
 #include <string.h>
@@ -6,10 +8,6 @@
 #include <gtk/gtkx.h>     /* for gtk_plug */
 
 #include "desktop.h"
-
-#ifdef LAYER
-#include "layer.h"
-#endif
 
 #define PROMPT "Launch : "
 #define COMPLETION_TIMEOUT 100
@@ -56,7 +54,6 @@ struct Top
   GtkWidget *entry;
   GtkWidget *prompt;
   GdkRectangle rect;
-  struct zwlr_layer_surface_v1 *surf;
   struct Monitor *monitor;
 };
 
@@ -72,7 +69,6 @@ struct Popup
   GdkRectangle rect;  // tamaño del popup
   GtkAdjustment *adj;
   gdouble lower;      // adjusment value
-  struct zwlr_layer_surface_v1 *surf;
   struct Monitor *monitor;
   struct Top *top;
   struct Options *opt;
@@ -152,6 +148,8 @@ monitor_set (struct Top *top, struct Popup *pop, struct Options *opt)
   t = gdk_display_get_name (display);
   top->monitor->wayland_backend = !strncmp (t, "wayland", strlen("wayland"));
 
+  if (getenv ("SWAYSOCK"))
+    top->monitor->swaysock = TRUE;
 
   return;
 }
@@ -254,20 +252,17 @@ g_horizontal (struct Top *top, struct Popup *pop, struct Options *opt)
       pop->rect.y += top->monitor->area.y;
     }
 
+  if (top->monitor->wayland_backend)
+   {
+     pop->rect.x = top->rect.width;
+     pop->rect.y = 0;
+   }
+
   gtk_widget_set_size_request (top->window, top->rect.width, -1);
   gtk_widget_set_size_request (pop->window, pop->rect.width, -1);
 
-  if (pop->monitor->wayland_backend && pop->monitor->swaysock)
-    {
-#ifdef LAYER
-      layer_move (pop->surf, pop->rect.x, pop->rect.y);
-#endif
-    }
-  else
-    {
-      gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
-      gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
-    }
+  gtk_window_move (GTK_WINDOW (top->window), top->rect.x, top->rect.y);
+  gtk_window_move (GTK_WINDOW (pop->window), pop->rect.x, pop->rect.y);
 
   return;
 }
@@ -397,15 +392,26 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
       if (popup->rect.height > top->rect.y)
         popup->rect.height = top->rect.y;
       popup->rect.y = top->rect.y - popup->rect.height <= 0 ? 0 : top->rect.y - popup->rect.height;
-      /* if (top->monitor->wayland_backend) */
-      /* popup->rect.y = -(popup->rect.height + top->rect.y + top->rect.height- top->monitor->area.height); */
+
+      if (top->monitor->wayland_backend)
+      {
+        popup->rect.y = - (popup->rect.height);
+        popup->rect.x = 0;
+      }
     }
   else
     {
       if (popup->rect.height >= (top->monitor->area.height -
                                  (top->rect.y - top->monitor->area.y) + top->rect.height))
         popup->rect.height = top->monitor->area.height - (top->rect.y - top->monitor->area.y) - top->rect.height;
-      popup->rect.y = top->rect.y + top->rect.height;
+
+      if (top->monitor->wayland_backend)
+      {
+       popup->rect.x = 0;
+       popup->rect.y = top->rect.height;
+      }
+      else
+        popup->rect.y = top->rect.y + top->rect.height;
     }
 
 
@@ -413,16 +419,7 @@ vertical_popup_resize (struct Top *top, struct Popup *popup, struct Options *opt
 
   if (top->monitor->wayland_backend)
     {
-      if (top->monitor->swaysock)
-        {
-#ifdef LAYER
-          layer_move (popup->surf, popup->rect.x, popup->rect.y);
-#endif
-        }
-      else
-        {
-          gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
-        }
+       gtk_window_move (GTK_WINDOW (popup->window), popup->rect.x, popup->rect.y);
     }
   else  // X11
     {
@@ -1186,6 +1183,17 @@ focus_out_event_cb (GtkWidget *w, GdkEvent *e, gpointer data)
   return GDK_EVENT_PROPAGATE;
 }
 
+gboolean swaymsg (gpointer data)
+{
+    struct Top *top= data;
+    char *s;
+
+    asprintf (&s, "swaymsg [app_id=t4] move position %dpx %dpx", top->rect.x, top->rect.y);
+    int ret = system (s);
+    free (s);
+    return ret;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -1244,37 +1252,25 @@ main (int argc, char *argv[])
 
   read_input (&pop);
 
-  if (getenv ("SWAYSOCK") && !getenv ("WESTON_CONFIG_FILE"))
-    {
-      mon.swaysock = TRUE;
-      gtk_widget_realize (top.window);
-      gtk_widget_realize (pop.window);
-#ifdef LAYER
-      top.surf = layer_init (top.window);
-      pop.surf = layer_init (pop.window);
-#endif
-    }
-  else
-    {
-      mon.swaysock = FALSE;
-      gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
-    }
+  gtk_window_set_transient_for (GTK_WINDOW (pop.window), GTK_WINDOW (top.window));
+
+
 
   if (opt.l)
     g_vertical (&top, &pop, &opt);
   else
     g_horizontal (&top, &pop, &opt);
 
+
   if (mon.swaysock)
-    {
-#ifdef LAYER
-      layer_set_keyboard (top.surf, TRUE);
-      layer_move (top.surf, top.rect.x, top.rect.y);
-#endif
-    }
+      g_idle_add (swaymsg, &top.window);
+
   gtk_window_resize (GTK_WINDOW(top.window), top.rect.width, top.rect.height);
 
   gtk_widget_set_can_focus (pop.flow, TRUE);
+
+  gtk_widget_show_all (top.window);
+  gtk_widget_show_all (pop.window);
 
   gtk_main ();
 
