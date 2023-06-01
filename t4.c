@@ -710,10 +710,8 @@ read_stdin (struct Popup *popup)
 void
 read_desktop (struct Popup *popup)
 {
-  GList *l;
-
   desktop_init_list ();
-  l = desktop_list;
+  GList *l = desktop_list;
 
   while (l != NULL)
     {

@@ -15,6 +15,7 @@
 
 
 const gchar *lang;
+GList *desktop_list;
 
 gint
 compare (gconstpointer a, gconstpointer b)
