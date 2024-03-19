@@ -1188,7 +1188,7 @@ gboolean swaymsg (gpointer data)
     struct Top *top= data;
     char *s;
 
-    asprintf (&s, "swaymsg [app_id=t4] move position %dpx %dpx", top->rect.x, top->rect.y);
+    asprintf (&s, "swaymsg [app_id=t4] move position %dpx %dpx &> /dev/null", top->rect.x, top->rect.y);
     int ret = system (s);
     free (s);
     return ret;

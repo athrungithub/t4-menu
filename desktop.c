@@ -50,17 +50,6 @@ get_default_search_path (void)
   return (const char **) args;
 }
 
-/*
- * void
- * print_desktop_dirs (const char **dirs)
- * {
- *   char *directories;
- *
- *   directories = g_strjoinv (", ", (char **) dirs);
- *   udd_verbose_print(_("Search path is now: [%s]\n"), directories);
- *   g_free (directories);
- * }
- */
 
 void
 desktop_info (gchar *file)
@@ -218,6 +207,16 @@ desktop_init_list (void)
 }
 
 #ifdef TEST
+void
+print_desktop_dirs (const char **dirs)
+{
+  char *directories;
+
+  directories = g_strjoinv (", ", (char **) dirs);
+  udd_verbose_print(_("Search path is now: [%s]\n"), directories);
+  g_free (directories);
+}
+
 int
 main (int argc, char **argv)
 {
