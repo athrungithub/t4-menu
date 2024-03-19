@@ -88,7 +88,11 @@ desktop_info (gchar *file)
         g_warning ("Unable read Desktop Item Name: %s\n", file);
     }
 
-    for (i = 0; it->exec[i] != ' '; i++) {}
+    for (i = 0; it->exec[i]; i++)
+    {
+        if (it->exec[i] == ' ')
+            break;
+    }
     it->exec_striped = g_strndup (it->exec, i);
 
    desktop_list= g_list_insert_sorted (desktop_list, it, compare);
