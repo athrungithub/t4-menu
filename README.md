@@ -19,20 +19,8 @@ ls /usr/bin | t4
 ## Install:
 depend: gtk+3
 
-optional: (for sway, wlr-layer-shell)
-    wlroots
-
-    wayland-clients
 
 compile:
-    meson
-
-    ninja
-    optional for sway wlr-layer-shell
-
-    wayland-protocols
-
-    wayland-scanner
 
 git clone https://github.com/athrungithub/t4-menu
 
@@ -49,9 +37,9 @@ sudo ninja -C build install
 
   -y    y position.
 
-  -W    wide window.
+  -w    wide window.
 
-  -l    lines.
+  -l    lines (vertical mode).
 
   -f    font.
 
