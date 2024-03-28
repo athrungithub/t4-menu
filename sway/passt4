@@ -9,9 +9,16 @@ files=( "${files[@]#"$prefix"/}" )
 files=( "${files[@]%.gpg}" )
 # fbase=( "${files[@]##*/}" )
 
-word=$(printf '%s\n' "${files[@]}" | t4 -l 10 -p "Password" -f "14px Liberation Sans" -W 300 --name "TopMiddleList" --pb "rgba(220,40,50,0.8)" $@)
+printf '%s%s\n' "${files[@]}" "$@"
 
-if [[ -n $word ]]; then
+word=$(printf '%s\n' "${files[@]}" | t4 -l 10 -p "Password" -f "14px Liberation Sans" -W 300 --name "TopMiddleList" --pb "rgba(220,40,50,0.8)" )
+
+[[ $word ]] || exit
+
+if [[ $? != 0 ]]; then
+    exit
+else
     wl-copy -s "${XDG_SEAT}" -o $(/usr/bin/pass show  "$word" 2>/dev/null)
-    notify-send -a pass "Password copied to the clipboard"
+    notify-send -a pass -t 2000 "$word" "Password copied to the clipboard"
+    exit
 fi
